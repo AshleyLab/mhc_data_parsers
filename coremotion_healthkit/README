@@ -1,0 +1,4 @@
+## Scripts to aggregate core motion and healthkit activity 
+get_activity_healthkit.sh
+get_activity_motion.sh
+assemble_results_across_subjects.sh
