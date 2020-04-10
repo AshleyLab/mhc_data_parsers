@@ -58,11 +58,13 @@ def get_activity_fractions_from_duration(duration_dict):
     return fraction_dict
 
 def parse_motion_activity(file_path):
-    cur_blob=file_path.split('/')[-2]
     duration_dict=dict()
     fraction_dict=dict()
     numentries=dict() 
-
+    try:
+        cur_blob=file_path.split('/')[-2]
+    except: 
+        return [duration_dict,fraction_dict,num_entries]
     pandas_coumns=['startTime','activityType','confidence']
     try:
         data=pd.read_csv(file_path,
@@ -132,9 +134,12 @@ def parse_motion_activity(file_path):
     return [duration_dict,fraction_dict,numentries]
 
 
-def parse_healthkit_sleep(file_path): 
-    cur_blob=file_path.split('/')[-2]
+def parse_healthkit_sleep(file_path):
     tally_dict=dict() 
+    try:
+        cur_blob=file_path.split('/')[-2]
+    except: 
+        return tally_dict
     try:
         data=pd.read_csv(file_path,
                          sep=',',
@@ -177,8 +182,11 @@ def parse_healthkit_sleep(file_path):
     return tally_dict
 
 def parse_healthkit_workout(file_path): 
-    cur_blob=file_path.split('/')[-2]
     tally_dict=dict() 
+    try:
+        cur_blob=file_path.split('/')[-2]
+    except: 
+        return tally_dict
     try:
         data=pd.read_csv(file_path,
                          sep=',',
@@ -221,8 +229,11 @@ def parse_healthkit_workout(file_path):
     return tally_dict
 
 def parse_healthkit_data(file_path):
-    cur_blob=file_path.split('/')[-2]
     tally_dict=dict()
+    try:
+        cur_blob=file_path.split('/')[-2]
+    except: 
+        return tally_dict
     try:
         data=pd.read_csv(file_path,
                          sep=',',

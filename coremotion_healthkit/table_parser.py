@@ -120,6 +120,11 @@ def parse_motion_tracker(table_path,synapseCacheDir,subjects):
             continue
         else:
             blob_name=row['data.csv']
+            if pd.isna(blob_name): 
+                continue 
+            if pd.isnull(blob_name): 
+                continue 
+
             if blob_name.endswith('NA'):
                 continue 
             synapseCacheFile=get_synapse_cache_entry(synapseCacheDir,blob_name)
@@ -157,6 +162,11 @@ def parse_healthkit_sleep_collector(table_path,synapseCacheDir,subjects):
             continue
         else:
             blob_name=data_table['data.csv'][row]
+            if pd.isna(blob_name): 
+                continue 
+            if pd.isnull(blob_name): 
+                continue 
+
             if blob_name.endswith("NA"):
                 continue
             if blob_name.endswith('None'): 
@@ -189,6 +199,11 @@ def parse_healthkit_data_collector(table_path,synapseCacheDir,subjects):
             continue
         else:
             blob_name=row['data.csv']
+            if pd.isna(blob_name): 
+                continue 
+            if pd.isnull(blob_name): 
+                continue 
+
             if blob_name.endswith("NA"):
                 continue
             if blob_name.endswith('None'): 
