@@ -21,7 +21,7 @@ def qc_mt(data):
     data=np.delete(data,to_delete)        
     return data    
 def qc_hk(datatype,value,startTime,endTime):
-    datatype=datatype.decode('utf-8') 
+    #datatype=datatype.decode('utf-8') 
     if datatype not in ["HKQuantityTypeIdentifierDistanceWalk","HKQuantityTypeIdentifierStepCount"]:
         return True 
     if datatype=="HKQuantityTypeIdentifierDistanceWalk": 
@@ -58,18 +58,19 @@ def get_activity_fractions_from_duration(duration_dict):
     return fraction_dict
 
 def parse_motion_activity(file_path):
+    cur_blob=file_path.split('/')[-2]
     duration_dict=dict()
     fraction_dict=dict()
     numentries=dict() 
 
-    pandas_coumns=['starTime','activityType','confidence']
+    pandas_coumns=['startTime','activityType','confidence']
     try:
         data=pd.read_csv(file_path,
-                         sep=','
+                         sep=',',
                          header='infer',
                          names=pandas_columns,
                          dtype={'value':np.float16},
-                         parse_dates=['starTime'],
+                         parse_dates=['startTime'],
                          infer_datetime_format=True,
                          quotechar='"',
                          na_values=['value'],
@@ -132,13 +133,12 @@ def parse_motion_activity(file_path):
 
 
 def parse_healthkit_sleep(file_path): 
+    cur_blob=file_path.split('/')[-2]
     tally_dict=dict() 
-    pandas_columns=['startTime','type','categoryValue','value','unit','source','sourceIdentifier']
     try:
         data=pd.read_csv(file_path,
                          sep=',',
                          header='infer',
-                         names=pandas_columns,
                          dtype = {'value': np.float16 },
                          parse_dates=['startTime'],
                          infer_datetime_format=True,
@@ -146,17 +146,17 @@ def parse_healthkit_sleep(file_path):
                          na_values=['value'],
                          error_bad_lines=False,
                          engine='c')
-        first_col=pandas_columns[0]
+        first_col='startTime'
         if(data.iloc[0][first_col]==first_col):
           data= data.drop([0])
-    except: 
+    except Exception as e: 
         print("There was a problem loading:"+str(file_path))
         return tally_dict
     #get the duration of each activity by day
     try:
         for index,row in data.iterrows():
             if row['startTime'] is not None:
-                datatype=row['categoryValue']
+                datatype=row['category value']
                 source=row['source']
                 sourceIdentifier=row['sourceIdentifier']
                 source_tuple=tuple([source,sourceIdentifier])
@@ -172,30 +172,29 @@ def parse_healthkit_sleep(file_path):
                     tally_dict[day][datatype][source_tuple][cur_blob]=value
                 else:
                     tally_dict[day][datatype][source_tuple][cur_blob]+=value
-    except:
+    except Exception as e:
         print("There was a problem parsing:"+str(file_path))
-        return tally_dict
     return tally_dict
 
 def parse_healthkit_workout(file_path): 
+    cur_blob=file_path.split('/')[-2]
     tally_dict=dict() 
-    pandas_columns=['startTime','endTime','type','workoutType','total distance','energy_consumed','unit','source','sourceIdentifier','metadata']
     try:
         data=pd.read_csv(file_path,
                          sep=',',
                          header='infer',
-                         names=pandas_columns,
-                         dtype = {'value': np.float16 },
+                         dtype = {'total distance':np.float16,
+                                  'energy consumed':np.float16},
                          parse_dates=['startTime','endTime'],
                          infer_datetime_format=True,
                          quotechar='"',
-                         na_values=['value'],
+                         na_values=['total distance'],
                          error_bad_lines=False,
                          engine='c')
-        first_col=pandas_columns[0]
+        first_col='startTime'
         if(data.iloc[0][first_col]==first_col):
             data= data.drop([0])
-    except:
+    except Exception as e:
         print("There was a problem loading:"+str(file_path))
         return tally_dict
     #get the duration of each activity by day
@@ -206,7 +205,7 @@ def parse_healthkit_workout(file_path):
             sourceIdentifier=row['sourceIdentifier']
             source_tuple=tuple([source,sourceIdentifier])
             day=row['startTime'].date()
-            value=row['energy_consumed']
+            value=row['energy consumed']
         if day not in tally_dict:
             tally_dict[day]=dict()
             if datatype not in tally_dict[day]:
@@ -217,31 +216,43 @@ def parse_healthkit_workout(file_path):
                 tally_dict[day][datatype][source_tuple][cur_blob]=value
             else:
                 tally_dict[day][datatype][source_tuple][cur_blob]+=value
-    except:
+    except Exception as e:
         print("There was a problem parsing:"+str(file_path))
     return tally_dict
 
-def parse_healthkit_steps(file_path):
+def parse_healthkit_data(file_path):
+    cur_blob=file_path.split('/')[-2]
     tally_dict=dict()
-    pandas_columns=['startTime','endTime','type','value','unit','source','sourceIdentifier']
     try:
         data=pd.read_csv(file_path,
-                 sep=',',
-                 header='infer',
-                 names=pandas_columns,
-                 dtype = {'value': np.float16 },
-                 parse_dates=['startTime','endTime'],
-                 infer_datetime_format=True,
-                 quotechar='"',
-                 na_values=['value'],
-                 error_bad_lines=False,
-                 engine='c')
-        first_col=pandas_columns[0]
-        if(data.iloc[0][first_col]==first_col):
-            data= data.drop([0])
+                         sep=',',
+                         header='infer',
+                         dtype = {'value': np.float16 },
+                         parse_dates=['startTime','endTime'],
+                         infer_datetime_format=True,
+                         quotechar='"',
+                         na_values=['value'],
+                         error_bad_lines=False,
+                         engine='c')
+        if(data['startTime'][0]=='startTime'):
+            data=data.drop([0])
     except:
-        print("There was a problem loading:"+str(file_path))
-        return tally_dict
+        try:
+            data=pd.read_csv(file_path,
+                             sep=',',
+                             header='infer',
+                             dtype = {'value': np.float16 },
+                             parse_dates=['datetime'],
+                             infer_datetime_format=True,
+                             quotechar='"',
+                             na_values=['value'],
+                             error_bad_lines=False,
+                             engine='c')
+            if(data['datetime'][0]=='datetime'): 
+                data=data.drop([0])
+        except Exception as e:
+            print("There was a problem loading:"+str(file_path))
+            return tally_dict
     #get the duration of each activity by day
     try:
         for index,row in data.iterrows():
@@ -249,9 +260,13 @@ def parse_healthkit_steps(file_path):
             source=row['source']
             sourceIdentifier=row['sourceIdentifier']
             source_tuple=tuple([source,sourceIdentifier])
-            day=row['startTime'].date()
             value=row['value']
-            qc_result=qc_hk(datatype,value,data['startTime'][row],data['endTime'][row])
+            if 'startTime' in data.columns:
+                day=row['startTime'].date()
+                qc_result=qc_hk(datatype,value,row['startTime'],row['endTime'])
+            else: 
+                day=row['datetime'].date()
+                qc_result=True
             if qc_result==False: 
                 continue 
             if day not in tally_dict:
@@ -264,7 +279,7 @@ def parse_healthkit_steps(file_path):
                 tally_dict[day][datatype][source_tuple][cur_blob]=value
             else:
                 tally_dict[day][datatype][source_tuple][cur_blob]+=value
-    except:
+    except Exception as e:
         print("There was a problem importing:"+str(file_path))
     return tally_dict
 
@@ -272,7 +287,9 @@ if __name__=="__main__":
     #TESTS for sherlock
     import pdb
     base_dir="/oak/stanford/groups/euan/projects/mhc/data/synapseCache/"
-    health_kit_workout=parse_healthkit_workout("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/309/4661309/data.csv-5dc42cce-eab6-40c2-bd97-f51b78bb069d2034482356528994271.tmp")
+    #health_kit_workout=parse_healthkit_workout(base_dir+"309/4661309/data.csv-5dc42cce-eab6-40c2-bd97-f51b78bb069d2034482356528994271.tmp") 
+    health_kit_data=parse_healthkit_data(base_dir+"96/3082096/data.csv-5dbff042-7cf2-4d82-b627-ae1b406bfbb21795360669337449335.tmp")  #missing source, should error
+    #health_kit_sleep=parse_healthkit_sleep(base_dir+"596/4478596/data.csv-40ce6eb1-c4d3-4dfb-8465-d25249b128307556370121217889486.tmp") 
     pdb.set_trace() 
 
     

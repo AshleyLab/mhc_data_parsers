@@ -39,6 +39,7 @@ def main():
         subject_daily_vals=table_parser_choices[args.data_types[i]](args.tables[i],args.synapseCacheDir,args.subjects)
         if args.pickle_dict==True: 
             pickle.dump(subject_daily_vals,open(args.out_prefixes[i]+".p",'wb'))
+        print("aggregating results!")
         #aggregate results        
         aggregation_choices[args.data_types[i]](subject_daily_vals,args.out_prefixes[i])       
 

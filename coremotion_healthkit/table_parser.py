@@ -1,4 +1,5 @@
 #parses data tables
+import pandas as pd 
 from table_loader import *
 from synapse_parser import *
 from datetime import datetime,timedelta
@@ -99,7 +100,7 @@ def get_synapse_cache_entry(synapseCacheDir,blob_name):
         return None
 
 def parse_motion_tracker(table_path,synapseCacheDir,subjects):
-    data_table=load_motion_tracker(table_path)
+    data_table=load_table(table_path)
     print("loaded motion tracker data table") 
     if subjects!="all": 
         subject_dict=dict()
@@ -111,14 +112,14 @@ def parse_motion_tracker(table_path,synapseCacheDir,subjects):
     subject_numentries=dict()
     
     total_rows=len(data_table)
-    for row in range(total_rows):
-        if row%100==0:
-            print(str(row)+"/"+str(total_rows))
-        cur_subject=data_table['healthCode'][row]
+    for index,row in data_table.iterrows():
+        if index%100==0:
+            print(str(index)+"/"+str(total_rows))
+        cur_subject=row['healthCode']
         if (subjects!="all") and (cur_subject not in subject_dict):
             continue
         else:
-            blob_name=data_table['data'][row]
+            blob_name=row['data.csv']
             if blob_name.endswith('NA'):
                 continue 
             synapseCacheFile=get_synapse_cache_entry(synapseCacheDir,blob_name)
@@ -138,23 +139,24 @@ def parse_motion_tracker(table_path,synapseCacheDir,subjects):
     return [subject_duration_vals,subject_fraction_vals,subject_numentries]
 
 def parse_healthkit_sleep_collector(table_path,synapseCacheDir,subjects):
-    data_table=load_health_kit(table_path)
+    data_table=load_table(table_path)
     print("loaded healthkit data table") 
     if subjects !="all":
         subject_dict=dict()
         subjects=open(subjects,'r').read().strip().split('\n')
         for subject in subjects:
             subject_dict[subject]=1
-    print(str(subject_dict))
     subject_sleep_vals=dict()
     total_rows=len(data_table)
-    print(str(total_rows))
-    for row in range(total_rows):
-        cur_subject=data_table['healthCode'][row] 
+    print("entries to parse:"+str(total_rows))
+    for index,row in data_table.iterrows():
+        if index%10==0: 
+            print(str(index)+'/'+str(total_rows))
+        cur_subject=row['healthCode']
         if ((subjects!="all") and (cur_subject not in subject_dict)):
             continue
         else:
-            blob_name=data_table['data'][row]
+            blob_name=data_table['data.csv'][row]
             if blob_name.endswith("NA"):
                 continue
             if blob_name.endswith('None'): 
@@ -169,29 +171,30 @@ def parse_healthkit_sleep_collector(table_path,synapseCacheDir,subjects):
 
 
 def parse_healthkit_data_collector(table_path,synapseCacheDir,subjects):
-    data_table=load_health_kit(table_path)
+    data_table=load_table(table_path)
     print("loaded healthkit data table") 
     if subjects !="all":
         subject_dict=dict()
         subjects=open(subjects,'r').read().strip().split('\n')
         for subject in subjects:
             subject_dict[subject]=1
-    print(str(subject_dict))
     subject_distance_vals=dict()
     total_rows=len(data_table)
-    print(str(total_rows))
-    for row in range(total_rows):
-        cur_subject=data_table['healthCode'][row] 
+    print("entries to parse:"+str(str(total_rows)))
+    for index,row in data_table.iterrows():
+        if index%10==0: 
+            print(str(index)+"/"+str(total_rows))
+        cur_subject=row['healthCode']
         if ((subjects!="all") and (cur_subject not in subject_dict)):
             continue
         else:
-            blob_name=data_table['data'][row]
+            blob_name=row['data.csv']
             if blob_name.endswith("NA"):
                 continue
             if blob_name.endswith('None'): 
                 continue 
             synapseCacheFile=get_synapse_cache_entry(synapseCacheDir,blob_name)
-            health_kit_distance=parse_healthkit_steps(synapseCacheFile)
+            health_kit_distance=parse_healthkit_data(synapseCacheFile)
             if cur_subject not in subject_distance_vals:
                 subject_distance_vals[cur_subject]=health_kit_distance
             else:
@@ -199,23 +202,28 @@ def parse_healthkit_data_collector(table_path,synapseCacheDir,subjects):
     return subject_distance_vals 
         
 def parse_healthkit_workout_collector(table_path,synapseCacheDir,subjects):
-    data_table=load_health_kit(table_path)
+    data_table=load_table(table_path)
     print("loaded healthkit data table") 
     if subjects !="all":
         subject_dict=dict()
         subjects=open(subjects,'r').read().strip().split('\n')
         for subject in subjects:
             subject_dict[subject]=1
-    print(str(subject_dict))
     subject_distance_vals=dict()
     total_rows=len(data_table)
-    print(str(total_rows))
-    for row in range(total_rows):
-        cur_subject=data_table['healthCode'][row] 
+    print("entries to parse:"+str(total_rows))
+    for index,row in data_table.iterrows():
+        if index%10 ==0:
+            print(str(index)+"/"+str(total_rows))
+        cur_subject=row['healthCode']
         if ((subjects!="all") and (cur_subject not in subject_dict)):
             continue
         else:
-            blob_name=data_table['data'][row]
+            blob_name=row['data.csv'] 
+            if pd.isna(blob_name): 
+                continue 
+            if pd.isnull(blob_name): 
+                continue 
             if blob_name.endswith("NA"):
                 continue
             if blob_name.endswith('None'): 
@@ -232,13 +240,17 @@ def parse_healthkit_workout_collector(table_path,synapseCacheDir,subjects):
 
 if __name__=="__main__":
     #TESTS 
-    synapseCacheDir="/oak/stanford/grups/euan/projects/mhc/data/synapseCache/"
-    subjects="/oak/stanford/grups/euan/projects/mhc/data/tables/v2_data_subset/subjects/healthkit_workout/x1000"
-    
-
-    table_path="/oak/stanford/groups/euan/projects/mhc/data/tables/v2_data_subset/cardiovascular-HealthKitWorkoutCollector-v1.tsv"
-    subject_health_kit_distance=parse_healthkit_workout_collector(table_path,synapseCacheDir,subjects) 
-    
+    synapseCacheDir="/oak/stanford/groups/euan/projects/mhc/data/synapseCache/"
+    subjects="/oak/stanford/groups/euan/projects/mhc/data/tables/subjects/hk/hk.workout"    
+    #workouts
+    #workout_table_path="/oak/stanford/groups/euan/projects/mhc/data/tables/cardiovascular-HealthKitWorkoutCollector-v1.tsv"
+    #workouts=parse_healthkit_workout_collector(workout_table_path,synapseCacheDir,subjects)     
+    #data
+    data_table_path="/oak/stanford/groups/euan/projects/mhc/data/tables/cardiovascular-HealthKitDataCollector-v1.tsv"
+    data=parse_healthkit_workout_collector(data_table_path,synapseCacheDir,subjects)     
+    #sleep
+    sleep_table_path="/oak/stanford/groups/euan/projects/mhc/data/tables/cardiovascular-HealthKitSleepCollector-v1.tsv"
+    sleep=parse_healthkit_workout_collector(sleep_table_path,synapseCacheDir,subjects)     
     pdb.set_trace()
     
 

@@ -1,9 +1,8 @@
-#NOTE: tested on python 2.7 w/ anaconda 2
 #Author: annashch@stanford.edu
 import numpy as np
+import pandas as pd 
 from datetime import datetime
 from dateutil.parser import parse 
-#from io import StringIO
 
 def convert_datetime(x):
     if x=="NA":
@@ -24,122 +23,26 @@ def convert_float(x):
         return float(x)     
     
 
-def load_motion_tracker(table_path):
-    dtype_dict=dict()
-    try:
-        dtype_dict['names']=('ID',
-                             'recordId',
-                             'appVersion',
-                             'phoneInfo',
-                             'uploadDate',
-                             'healthCode',
-                             'externalId',
-                             'dataGroups',
-                             'createdOn',
-                             'createdOnTimeZone',
-                             'userSharingScope',
-                             'validationErrors',
-                             'data') 
-        dtype_dict['formats']=('U36',
-                               'U36',
-                               'U36',
-                               'U36',
-                               datetime,
-                               'U36',
-                               'U36',
-                               'U36',
-                               datetime,
-                               'U36',
-                               'U36',
-                               'U36',
-                               'U36')
-        data=np.genfromtxt(table_path,
-                           dtype=dtype_dict['formats'],
-                           names=dtype_dict['names'],
-                           delimiter='\t',
-                           converters={4: convert_datetime,
-                                       8: convert_datetime},
-                           skip_header=True,
-                           loose=True,
-                           invalid_raise=False)
-    except:
-        dtype_dict['names']=('ID',
-                             'recordId',
-                             'healthCode',
-                             'externalId',
-                             'uploadDate',
-                             'createdOn',
-                             'appVersion',
-                             'phoneInfo',
-                             'data')
-        dtype_dict['formats']=('U36',
-                               'U36',
-                               'U36',
-                               'U36',
-                               datetime,
-                               datetime,
-                               'U36',
-                               'U36',
-                               'U36')
-        data=np.genfromtxt(table_path,
-                           dtype=dtype_dict['formats'],
-                           names=dtype_dict['names'],
-                           delimiter='\t',
-                           converters={4: convert_datetime,
-                                       5: convert_datetime},
-                           skip_header=True,
-                           loose=True,
-                           invalid_raise=False)
-        
-        
-    return data
-
-
-def load_health_kit(table_path):
-    dtype_dict=dict()
-    dtype_dict['names']=('ID',
-                         'recordId',
-                         'appVersion',
-                         'phoneInfo',
-                         'uploadDate',
-                         'healthCode',
-                         'externalId',
-                         'dataGroups',
-                         'createdOn',
-                         'createdOnTimeZone',
-                         'userSharingScope',
-                         'validationErrors',
-                         'data') 
-    dtype_dict['formats']=('U36',
-                           'U36',
-                           'U36',
-                           'U36',
-                           datetime,
-                           'U36',
-                           'U36',
-                           'U36',
-                           datetime,
-                           'U36',
-                           'U36',
-                           'U36',
-                           'U36')
-    data=np.genfromtxt(table_path,
-                       dtype=dtype_dict['formats'],
-                       names=dtype_dict['names'],
-                       delimiter='\t',
-                       converters={4: convert_datetime,
-                                   8: convert_datetime},
-                       skip_header=True,
-                       loose=True,
-                       invalid_raise=True)
+def load_table(table_path):
+    data= pd.read_csv(table_path,
+                      sep='\t',
+                      header=0,
+                      quotechar='"',
+                      index_col=0,
+                      dtype={'data.csv':str,
+                             'rawData':str,
+                             4:str,
+                             12:str},
+                      parse_dates=['uploadDate','createdOn'],
+                      infer_datetime_format=True,
+                      error_bad_lines=False,
+                      engine='c')
     return data 
-
 if __name__=="__main__":
     #TESTS for sherlock
     import pdb
-    base_dir="/oak/stanford/groups/euan/projects/mhc/data/tables/v2_data_subset/"
-    abtest_data=load_abtest(base_dir+"cardiovascular-ABTestResults-v1.tsv")
-    motionactivity_data=load_motion_tracker(base_dir+"cardiovascular-motionActivityCollector-v1.tsv")
-    healthkit_data=load_health_kit(base_dir+"cardiovascular-HealthKitDataCollector-v1.tsv")
+    base_dir="/oak/stanford/groups/euan/projects/mhc/data/tables/"
+    motionactivity_data=load_table(base_dir+"cardiovascular-motionActivityCollector-v1.tsv")
+    healthkit_data=load_table(base_dir+"cardiovascular-HealthKitDataCollector-v1.tsv")
     pdb.set_trace()
     
