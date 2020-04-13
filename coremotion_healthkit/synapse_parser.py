@@ -60,53 +60,51 @@ def get_activity_fractions_from_duration(duration_dict):
 def parse_motion_activity(file_path):
     duration_dict=dict()
     fraction_dict=dict()
-    numentries=dict() 
+    num_entries=dict() 
     try:
         cur_blob=file_path.split('/')[-2]
     except: 
         return [duration_dict,fraction_dict,num_entries]
-    pandas_coumns=['startTime','activityType','confidence']
+    pandas_columns=['startTime','activityType','confidence']
     try:
         data=pd.read_csv(file_path,
                          sep=',',
                          header='infer',
-                         names=pandas_columns,
                          dtype={'value':np.float16},
                          parse_dates=['startTime'],
                          infer_datetime_format=True,
                          quotechar='"',
-                         na_values=['value'],
                          error_bad_lines=False,
                         engine='c')
         first_col=pandas_columns[0]
         if(data.iloc[0][first_col]==first_col):
             data=data.drop([0])
-    except: 
+    except Exception as e: 
         print("there was a problem opening:"+str(file_path))
         return [duration_dict,fraction_dict,num_entries]
     #get the duration of each activity by day 
     first_row=0
     try:
         num_rows=data.shape[0]
-        cur_time=data['startTime'][first_row]
-        cur_day=data['startTime'][first_row].date() 
-        cur_activity=data['activityType'][first_row]
-        cur_confidence=data['confidence'][first_row] 
+        cur_time=data['startTime'].iloc[first_row]
+        cur_day=cur_time.date()
+        cur_activity=data['activityType'].iloc[first_row]
+        cur_confidence=data['confidence'].iloc[first_row] 
         while (cur_activity=="not available") and (first_row <(num_rows-1)) and (cur_confidence>0) :
             first_row+=1
-            cur_time=data['startTime'][first_row]
-            cur_day=data['startTime'][first_row].date() 
-            cur_activity=data['activityType'][first_row]
-            cur_confidence=data['confidence'][first_row] 
-    except:
-        return[duration_dict,fraction_dict,numentries]
+            cur_time=data['startTime'].iloc[first_row]
+            cur_day=cur_time.date()
+            cur_activity=data['activityType'].iloc[first_row]
+            cur_confidence=data['confidence'].iloc[first_row] 
+    except Exception as e:
+        return[duration_dict,fraction_dict,num_entries]
 
     for row in range(first_row+1,num_rows):
         try:
-            new_activity=data['activityType'][row]
-            new_time=data['startTime'][row]
-            new_day=data['startTime'][row].date()
-            new_confidence=data['confidence'][row] 
+            new_activity=data['activityType'].iloc[row]
+            new_time=data['startTime'].iloc[row]
+            new_day=new_time.date()
+            new_confidence=data['confidence'].iloc[row] 
             if (new_confidence < 1):
                 continue 
             if(new_time-cur_time)<=sample_gap_thresh:
@@ -116,14 +114,14 @@ def parse_motion_activity(file_path):
                 duration=abs(new_time-cur_time)
                 if cur_day not in duration_dict:
                     duration_dict[cur_day]=dict()
-                    numentries[cur_day]=0
+                    num_entries[cur_day]=0
                 if cur_activity not in duration_dict[cur_day]:
                     duration_dict[cur_day][cur_activity]=dict() 
                 if cur_blob not in duration_dict[cur_day][cur_activity]: 
                     duration_dict[cur_day][cur_activity][cur_blob]=duration 
                 else:
                     duration_dict[cur_day][cur_activity][cur_blob]+=duration
-                numentries[cur_day]+=1  
+                num_entries[cur_day]+=1  
             cur_activity=new_activity
             cur_time=new_time
             cur_day=new_day
@@ -131,7 +129,7 @@ def parse_motion_activity(file_path):
             continue
     #get the activity fractions relative to total duration
     fraction_dict=get_activity_fractions_from_duration(duration_dict)
-    return [duration_dict,fraction_dict,numentries]
+    return [duration_dict,fraction_dict,num_entries]
 
 
 def parse_healthkit_sleep(file_path):
@@ -299,8 +297,10 @@ if __name__=="__main__":
     import pdb
     base_dir="/oak/stanford/groups/euan/projects/mhc/data/synapseCache/"
     #health_kit_workout=parse_healthkit_workout(base_dir+"309/4661309/data.csv-5dc42cce-eab6-40c2-bd97-f51b78bb069d2034482356528994271.tmp") 
-    health_kit_data=parse_healthkit_data(base_dir+"96/3082096/data.csv-5dbff042-7cf2-4d82-b627-ae1b406bfbb21795360669337449335.tmp")  #missing source, should error
+    #health_kit_data=parse_healthkit_data(base_dir+"96/3082096/data.csv-5dbff042-7cf2-4d82-b627-ae1b406bfbb21795360669337449335.tmp")  #missing source, should error
     #health_kit_sleep=parse_healthkit_sleep(base_dir+"596/4478596/data.csv-40ce6eb1-c4d3-4dfb-8465-d25249b128307556370121217889486.tmp") 
+    cm=parse_motion_activity("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/620/4495620/data.csv-66e8ae65-71a4-4524-9b30-af3b92c89a86794705941809589082.tmp")
     pdb.set_trace() 
+
 
     
