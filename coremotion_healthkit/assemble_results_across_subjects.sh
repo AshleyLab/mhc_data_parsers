@@ -1,19 +1,20 @@
-python assemble_results_across_subjects.py --prefix /scratch/PI/euan/projects/mhc/data/timeseries_v2/healthkit_sleep/parsed_v2_HealthKitSleep.\
+python assemble_results_across_subjects.py --prefix /oak/stanford/groups/euan/users/annashch/mhc_data_parsers/coremotion_healthkit/out/parsed_HealthKitData. \
+       --first 0 \
+       --last 178 \
+       --outf /oak/stanford/groups/euan/projects/mhc/data/timeseries_allversions/parsed_HealthKitData.txt
+python assemble_results_across_subjects.py --prefix /oak/stanford/groups/euan/users/annashch/mhc_data_parsers/coremotion_healthkit/out/parsed_motionActivity. \
+       --first 0 \
+       --last 140 \
+       --outf /oak/stanford/groups/euan/projects/mhc/data/timeseries_allversions/parsed_motionActivity.txt
+python assemble_results_across_subjects.py --prefix /oak/stanford/groups/euan/users/annashch/mhc_data_parsers/coremotion_healthkit/out/parsed_HealthKitWorkout. \
+       --first 0 \
+       --last 43 \
+       --outf /oak/stanford/groups/euan/projects/mhc/data/timeseries_allversions/parsed_HealthKitWorkout.txt
+python assemble_results_across_subjects.py --prefix /oak/stanford/groups/euan/users/annashch/mhc_data_parsers/coremotion_healthkit/out/parsed_HealthKitSleep. \
        --first 0\
-       --last 155\
-       --outf /scratch/PI/euan/projects/mhc/data/timeseries_v2/sleep_healthkit_combined.txt
-
-#
-#python assemble_results_across_subjects.py --prefix /scratch/PI/euan/projects/mhc/data/timeseries_v2/motion_tracker/parsed_v2_motionActivity. \
-#       --first 0 \
-#       --last 353 \
-#       --outf /scratch/PI/euan/projects/mhc/data/timeseries_v2/motion_tracker_combined.txt
-##
-##
-#python assemble_results_across_subjects.py --prefix /scratch/PI/euan/projects/mhc/data/timeseries_v2/health_kit/parsed_v2_HealthKitData.\
-#       --first 0 \
-#       --last 453 \
-#       --outf /scratch/PI/euan/projects/mhc/data/timeseries_v2/health_kit_combined.txt
-##
-##
-#
+       --last 57 \
+       --outf /oak/stanford/groups/euan/projects/mhc/data/timeseries_allversions/parsed_HealthKitSleep.txt
+python assemble_results_across_subjects.py --prefix /oak/stanford/groups/euan/users/annashch/mhc_data_parsers/coremotion_healthkit/out/parsed_motionTracker. \
+       --first 0\
+       --last 184\
+       --outf /oak/stanford/groups/euan/projects/mhc/data/timeseries_allversions/parsed_motionTracker.txt

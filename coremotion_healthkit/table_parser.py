@@ -161,7 +161,7 @@ def parse_healthkit_sleep_collector(table_path,synapseCacheDir,subjects):
         if ((subjects!="all") and (cur_subject not in subject_dict)):
             continue
         else:
-            blob_name=data_table['data.csv'][row]
+            blob_name=row['data.csv']
             if pd.isna(blob_name): 
                 continue 
             if pd.isnull(blob_name): 

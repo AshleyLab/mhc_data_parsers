@@ -61,12 +61,13 @@ def parse_motion_activity(file_path):
     duration_dict=dict()
     fraction_dict=dict()
     num_entries=dict() 
+    parseAs=None
     try:
         cur_blob=file_path.split('/')[-2]
     except: 
         return [duration_dict,fraction_dict,num_entries]
-    pandas_columns=['startTime','activityType','confidence']
     try:
+        pandas_columns=['startTime','activityType','confidence']
         data=pd.read_csv(file_path,
                          sep=',',
                          header='infer',
@@ -79,32 +80,62 @@ def parse_motion_activity(file_path):
         first_col=pandas_columns[0]
         if(data.iloc[0][first_col]==first_col):
             data=data.drop([0])
-    except Exception as e: 
-        print("there was a problem opening:"+str(file_path))
-        return [duration_dict,fraction_dict,num_entries]
+        parse_as='motion_activity'
+    except :
+        try:
+            pandas_columns=["dateAndTime","activityTypeName","activityTypeValue","confidenceName","confidenceRaw","confidencePercent"]
+            data=pd.read_csv(file_path,
+                             sep=',',
+                             header='infer',
+                             parse_dates=['dateAndTime'],
+                             infer_datetime_format=True,
+                             quotechar='"',
+                             error_bad_lines=False,
+                             engine='c')
+            first_col=pandas_columns[0]
+            if(data.iloc[0][first_col]==first_col):
+                data=data.drop([0])
+            parse_as='motion_tracker'
+        except Exception as e:
+            print("there was a problem opening:"+str(file_path))
+            return [duration_dict,fraction_dict,num_entries]
     #get the duration of each activity by day 
     first_row=0
-    try:
+    try:        
         num_rows=data.shape[0]
-        cur_time=data['startTime'].iloc[first_row]
+        if parse_as=="motion_activity":
+            start_time_field='startTime'
+            activity_type_field='activityType' 
+            confidence_field='confidence'
+        else: 
+            start_time_field='dateAndTime'
+            activity_type_field='activityTypeName'
+            confidence_field='confidenceRaw'
+        
+        cur_time=parse(data[start_time_field].iloc[first_row])
+        cur_activity=data[activity_type_field].iloc[first_row]
+        cur_confidence=data[confidence_field].iloc[first_row] 
         cur_day=cur_time.date()
-        cur_activity=data['activityType'].iloc[first_row]
-        cur_confidence=data['confidence'].iloc[first_row] 
+        
+
         while (cur_activity=="not available") and (first_row <(num_rows-1)) and (cur_confidence>0) :
             first_row+=1
-            cur_time=data['startTime'].iloc[first_row]
-            cur_day=cur_time.date()
-            cur_activity=data['activityType'].iloc[first_row]
-            cur_confidence=data['confidence'].iloc[first_row] 
+            try:
+                cur_time=parse(data[start_time_field].iloc[first_row])
+                cur_day=cur_time.date()
+                cur_activity=data[activity_type_field].iloc[first_row]
+                cur_confidence=data[confidence_field].iloc[first_row] 
+            except: 
+                continue 
     except Exception as e:
         return[duration_dict,fraction_dict,num_entries]
 
     for row in range(first_row+1,num_rows):
         try:
-            new_activity=data['activityType'].iloc[row]
-            new_time=data['startTime'].iloc[row]
+            new_activity=data[activity_type_field].iloc[row]
+            new_time=parse(data[start_time_field].iloc[row])
             new_day=new_time.date()
-            new_confidence=data['confidence'].iloc[row] 
+            new_confidence=data[confidence_field].iloc[row] 
             if (new_confidence < 1):
                 continue 
             if(new_time-cur_time)<=sample_gap_thresh:
@@ -125,7 +156,7 @@ def parse_motion_activity(file_path):
             cur_activity=new_activity
             cur_time=new_time
             cur_day=new_day
-        except:
+        except Exception as e:
             continue
     #get the activity fractions relative to total duration
     fraction_dict=get_activity_fractions_from_duration(duration_dict)
@@ -299,7 +330,10 @@ if __name__=="__main__":
     #health_kit_workout=parse_healthkit_workout(base_dir+"309/4661309/data.csv-5dc42cce-eab6-40c2-bd97-f51b78bb069d2034482356528994271.tmp") 
     #health_kit_data=parse_healthkit_data(base_dir+"96/3082096/data.csv-5dbff042-7cf2-4d82-b627-ae1b406bfbb21795360669337449335.tmp")  #missing source, should error
     #health_kit_sleep=parse_healthkit_sleep(base_dir+"596/4478596/data.csv-40ce6eb1-c4d3-4dfb-8465-d25249b128307556370121217889486.tmp") 
-    cm=parse_motion_activity("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/620/4495620/data.csv-66e8ae65-71a4-4524-9b30-af3b92c89a86794705941809589082.tmp")
+    #cm=parse_motion_activity("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/620/4495620/data.csv-66e8ae65-71a4-4524-9b30-af3b92c89a86794705941809589082.tmp")
+    #cm=parse_motion_activity("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/600/2411600/data.csv-087bdbb6-5b75-4fe7-a49d-43bf2db45e562507055741394533653.tmp")
+    health_kit_sleep=parse_healthkit_sleep("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/305/7841305/data-8978e7f6-7b47-4a08-b7a5-f45f34598e09.csv")
+
     pdb.set_trace() 
 
 
