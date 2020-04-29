@@ -8,11 +8,11 @@ python assemble_results_across_subjects.py --prefix /oak/stanford/groups/euan/us
        --outf /oak/stanford/groups/euan/projects/mhc/data/timeseries_allversions/parsed_motionActivity.txt
 python assemble_results_across_subjects.py --prefix /oak/stanford/groups/euan/users/annashch/mhc_data_parsers/coremotion_healthkit/out/parsed_HealthKitWorkout. \
        --first 0 \
-       --last 43 \
+       --last 44 \
        --outf /oak/stanford/groups/euan/projects/mhc/data/timeseries_allversions/parsed_HealthKitWorkout.txt
 python assemble_results_across_subjects.py --prefix /oak/stanford/groups/euan/users/annashch/mhc_data_parsers/coremotion_healthkit/out/parsed_HealthKitSleep. \
        --first 0\
-       --last 57 \
+       --last 58 \
        --outf /oak/stanford/groups/euan/projects/mhc/data/timeseries_allversions/parsed_HealthKitSleep.txt
 python assemble_results_across_subjects.py --prefix /oak/stanford/groups/euan/users/annashch/mhc_data_parsers/coremotion_healthkit/out/parsed_motionTracker. \
        --first 0\

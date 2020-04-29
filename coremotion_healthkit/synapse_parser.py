@@ -76,7 +76,8 @@ def parse_motion_activity(file_path):
                          infer_datetime_format=True,
                          quotechar='"',
                          error_bad_lines=False,
-                        engine='c')
+                        engine='c')        
+        
         first_col=pandas_columns[0]
         if(data.iloc[0][first_col]==first_col):
             data=data.drop([0])
@@ -111,17 +112,19 @@ def parse_motion_activity(file_path):
             start_time_field='dateAndTime'
             activity_type_field='activityTypeName'
             confidence_field='confidenceRaw'
-        
-        cur_time=parse(data[start_time_field].iloc[first_row])
+        cur_time=data[start_time_field].iloc[first_row]
+        if(type(cur_time)==str): 
+            cur_time=parse(cur_time) 
         cur_activity=data[activity_type_field].iloc[first_row]
         cur_confidence=data[confidence_field].iloc[first_row] 
         cur_day=cur_time.date()
-        
 
         while (cur_activity=="not available") and (first_row <(num_rows-1)) and (cur_confidence>0) :
             first_row+=1
             try:
-                cur_time=parse(data[start_time_field].iloc[first_row])
+                cur_time=data[start_time_field].iloc[first_row]
+                if type(cur_time)==str: 
+                    cur_time=parse(cur_time) 
                 cur_day=cur_time.date()
                 cur_activity=data[activity_type_field].iloc[first_row]
                 cur_confidence=data[confidence_field].iloc[first_row] 
@@ -133,7 +136,9 @@ def parse_motion_activity(file_path):
     for row in range(first_row+1,num_rows):
         try:
             new_activity=data[activity_type_field].iloc[row]
-            new_time=parse(data[start_time_field].iloc[row])
+            new_time=data[start_time_field].iloc[row]
+            if type(new_time)==str: 
+                new_time=parse(new_time) 
             new_day=new_time.date()
             new_confidence=data[confidence_field].iloc[row] 
             if (new_confidence < 1):
@@ -277,6 +282,7 @@ def parse_healthkit_data(file_path):
         if(data['startTime'][0]=='startTime'):
             data=data.drop([0])
     except:
+        print("HERE") 
         try:
             data=pd.read_csv(file_path,
                              sep=',',
@@ -291,10 +297,12 @@ def parse_healthkit_data(file_path):
             if(data['datetime'][0]=='datetime'): 
                 data=data.drop([0])
         except Exception as e:
+            print("HERE2") 
             print("There was a problem loading:"+str(file_path))
             return tally_dict
     #get the duration of each activity by day
     try:
+        print("HERE3")
         for index,row in data.iterrows():
             datatype=row['type']
             source=row['source']
@@ -331,8 +339,8 @@ if __name__=="__main__":
     #health_kit_data=parse_healthkit_data(base_dir+"96/3082096/data.csv-5dbff042-7cf2-4d82-b627-ae1b406bfbb21795360669337449335.tmp")  #missing source, should error
     #health_kit_sleep=parse_healthkit_sleep(base_dir+"596/4478596/data.csv-40ce6eb1-c4d3-4dfb-8465-d25249b128307556370121217889486.tmp") 
     #cm=parse_motion_activity("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/620/4495620/data.csv-66e8ae65-71a4-4524-9b30-af3b92c89a86794705941809589082.tmp")
-    #cm=parse_motion_activity("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/600/2411600/data.csv-087bdbb6-5b75-4fe7-a49d-43bf2db45e562507055741394533653.tmp")
-    health_kit_sleep=parse_healthkit_sleep("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/305/7841305/data-8978e7f6-7b47-4a08-b7a5-f45f34598e09.csv")
+    cm=parse_motion_activity("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/583/46695583/27a1ef5f-c581-4867-8f72-551af1d40c7d-data.csv")
+    #health_kit_sleep=parse_healthkit_sleep("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/305/7841305/data-8978e7f6-7b47-4a08-b7a5-f45f34598e09.csv")
 
     pdb.set_trace() 
 
