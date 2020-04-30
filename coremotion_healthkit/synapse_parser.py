@@ -282,7 +282,6 @@ def parse_healthkit_data(file_path):
         if(data['startTime'][0]=='startTime'):
             data=data.drop([0])
     except:
-        print("HERE") 
         try:
             data=pd.read_csv(file_path,
                              sep=',',
@@ -297,12 +296,10 @@ def parse_healthkit_data(file_path):
             if(data['datetime'][0]=='datetime'): 
                 data=data.drop([0])
         except Exception as e:
-            print("HERE2") 
             print("There was a problem loading:"+str(file_path))
             return tally_dict
     #get the duration of each activity by day
     try:
-        print("HERE3")
         for index,row in data.iterrows():
             datatype=row['type']
             source=row['source']
