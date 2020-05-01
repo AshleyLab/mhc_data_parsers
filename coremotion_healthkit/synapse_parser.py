@@ -33,7 +33,9 @@ def qc_hk(datatype,value,startTime,endTime):
         else: 
             return True 
     if datatype=="HKQuantityTypeIdentifierStepCount": 
-        time_diff=(endTime-startTime).total_seconds()/60.0 
+        time_diff=(endTime-startTime).total_seconds()/60.0
+        if time_diff==0: 
+            return True
         rate=value/time_diff 
         if rate >1000: 
             print("BAD RATE") 
@@ -325,6 +327,7 @@ def parse_healthkit_data(file_path):
             else:
                 tally_dict[day][datatype][source_tuple][cur_blob]+=value
     except Exception as e:
+        print(row) 
         print("There was a problem importing:"+str(file_path))
     return tally_dict
 
@@ -333,10 +336,10 @@ if __name__=="__main__":
     import pdb
     base_dir="/oak/stanford/groups/euan/projects/mhc/data/synapseCache/"
     #health_kit_workout=parse_healthkit_workout(base_dir+"309/4661309/data.csv-5dc42cce-eab6-40c2-bd97-f51b78bb069d2034482356528994271.tmp") 
-    #health_kit_data=parse_healthkit_data(base_dir+"96/3082096/data.csv-5dbff042-7cf2-4d82-b627-ae1b406bfbb21795360669337449335.tmp")  #missing source, should error
+    health_kit_data=parse_healthkit_data(base_dir+"835/51713835/LdpCK1jqfl3X4CPrkC54DwfS-data.csv")  #missing source, should error
     #health_kit_sleep=parse_healthkit_sleep(base_dir+"596/4478596/data.csv-40ce6eb1-c4d3-4dfb-8465-d25249b128307556370121217889486.tmp") 
     #cm=parse_motion_activity("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/620/4495620/data.csv-66e8ae65-71a4-4524-9b30-af3b92c89a86794705941809589082.tmp")
-    cm=parse_motion_activity("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/583/46695583/27a1ef5f-c581-4867-8f72-551af1d40c7d-data.csv")
+    #cm=parse_motion_activity("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/583/46695583/27a1ef5f-c581-4867-8f72-551af1d40c7d-data.csv")
     #health_kit_sleep=parse_healthkit_sleep("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/305/7841305/data-8978e7f6-7b47-4a08-b7a5-f45f34598e09.csv")
 
     pdb.set_trace() 
