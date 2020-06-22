@@ -78,7 +78,8 @@ def parse_motion_activity(file_path):
                          infer_datetime_format=True,
                          quotechar='"',
                          error_bad_lines=False,
-                        engine='c')        
+                         index_col=False,
+                         engine='python')        
         
         first_col=pandas_columns[0]
         if(data.iloc[0][first_col]==first_col):
@@ -94,14 +95,28 @@ def parse_motion_activity(file_path):
                              infer_datetime_format=True,
                              quotechar='"',
                              error_bad_lines=False,
-                             engine='c')
+                             index_col=False,
+                             engine='python')
             first_col=pandas_columns[0]
             if(data.iloc[0][first_col]==first_col):
                 data=data.drop([0])
             parse_as='motion_tracker'
-        except Exception as e:
-            print("there was a problem opening:"+str(file_path))
-            return [duration_dict,fraction_dict,num_entries]
+        except:
+            try:                
+                data=pd.read_csv(file_path,
+                                 sep=',',
+                                 header=None,
+                                 names=['startTime','activityType','confidence'],
+                                 parse_dates=['startTime'],
+                                 infer_datetime_format=True,
+                                 quotechar='"',
+                                 error_bad_lines=False,
+                                 index_col=False,
+                                 engine='python')
+                parse_as='motion_activity'
+            except:
+                print("there was a problem opening:"+str(file_path))
+                return [duration_dict,fraction_dict,num_entries]
     #get the duration of each activity by day 
     first_row=0
     try:        
@@ -186,13 +201,28 @@ def parse_healthkit_sleep(file_path):
                          quotechar='"',
                          na_values=['value'],
                          error_bad_lines=False,
-                         engine='c')
+                         index_col=False,
+                         engine='python')
         first_col='startTime'
         if(data.iloc[0][first_col]==first_col):
           data= data.drop([0])
-    except Exception as e: 
-        print("There was a problem loading:"+str(file_path))
-        return tally_dict
+    except:
+        try:
+            data=pd.read_csv(file_path,
+                             sep=',',
+                             names=['startTime','type','category value','value','unit','source','sourceIdentifier','appVersion'],
+                             header=None,
+                             dtype = {'value': np.float16 },
+                             parse_dates=['startTime'],
+                             infer_datetime_format=True,
+                             quotechar='"',
+                             na_values=['value'],
+                             error_bad_lines=False,
+                             index_col=False,
+                             engine='python')
+        except:
+            print("There was a problem loading:"+str(file_path))
+            return tally_dict
     #get the duration of each activity by day
     try:
         for index,row in data.iterrows():
@@ -231,16 +261,36 @@ def parse_healthkit_workout(file_path):
                                   'energy consumed':np.float16},
                          parse_dates=['startTime','endTime'],
                          infer_datetime_format=True,
-                         quotechar='"',
                          na_values=['total distance'],
                          error_bad_lines=False,
-                         engine='c')
+                         index_col=False,
+                         quotechar='"',
+                         usecols=[0,1,2,3,4,5,6,7,8,9],
+                         engine='python')
         first_col='startTime'
         if(data.iloc[0][first_col]==first_col):
             data= data.drop([0])
-    except Exception as e:
-        print("There was a problem loading:"+str(file_path))
-        return tally_dict
+    except:
+        try:
+            data=pd.read_csv(file_path,
+                 sep=',',
+                 header='infer',
+                 dtype = {'total distance':np.float16,
+                          'energy consumed':np.float16},
+                 parse_dates=['startTime','endTime'],
+                 infer_datetime_format=True,
+                 na_values=['total distance'],
+                 error_bad_lines=False,
+                 index_col=False,
+                 quotechar='|',
+                 usecols=[0,1,2,3,4,5,6,7,8,9],
+                 engine='python')
+            first_col='startTime'
+            if(data.iloc[0][first_col]==first_col):
+                data= data.drop([0])
+        except:
+            print("There was a problem loading:"+str(file_path))
+            return tally_dict
     #get the duration of each activity by day
     try:
         for index,row in data.iterrows():
@@ -270,6 +320,7 @@ def parse_healthkit_data(file_path):
         cur_blob=file_path.split('/')[-2]
     except: 
         return tally_dict
+    #print(str(file_path))
     try:
         data=pd.read_csv(file_path,
                          sep=',',
@@ -280,7 +331,8 @@ def parse_healthkit_data(file_path):
                          quotechar='"',
                          na_values=['value'],
                          error_bad_lines=False,
-                         engine='c')
+                         index_col=False,
+                         engine='python')
         if(data['startTime'][0]=='startTime'):
             data=data.drop([0])
     except:
@@ -292,21 +344,38 @@ def parse_healthkit_data(file_path):
                              parse_dates=['datetime'],
                              infer_datetime_format=True,
                              quotechar='"',
+                             usecols=list(range(0,6)),
                              na_values=['value'],
                              error_bad_lines=False,
-                             engine='c')
+                             index_col=False,
+                             engine='python')
             if(data['datetime'][0]=='datetime'): 
                 data=data.drop([0])
-        except Exception as e:
-            print("There was a problem loading:"+str(file_path))
-            return tally_dict
+        except:
+            try:
+                data=pd.read_csv(file_path,
+                                 sep=',',
+                                 header=None,
+                                 names=['startTime','endTime','type','value','unit','source','sourceIdentifier','appVersion'],
+                                 dtype = {'value': np.float16 },
+                                 parse_dates=['startTime','endTime'],
+                                 infer_datetime_format=True,
+                                 quotechar='"',
+                                 na_values=['value'],
+                                 error_bad_lines=False,
+                                 index_col=False,
+                                 engine='python')
+            except: 
+                print("There was a problem loading:"+str(file_path))
+                return tally_dict
     #get the duration of each activity by day
     try:
         for index,row in data.iterrows():
             datatype=row['type']
             source=row['source']
-            sourceIdentifier=row['sourceIdentifier']
-            source_tuple=tuple([source,sourceIdentifier])
+            #sourceIdentifier=row['sourceIdentifier']
+            #source_tuple=tuple([source,sourceIdentifier])
+            source_tuple=tuple([source])#,sourceIdentifier])
             value=row['value']
             if 'startTime' in data.columns:
                 day=row['startTime'].date()
@@ -334,11 +403,14 @@ def parse_healthkit_data(file_path):
 if __name__=="__main__":
     #TESTS for sherlock
     import pdb
+    #TEST THIS:
+    #/oak/stanford/groups/euan/projects/mhc/data/synapseCache/462/53682462/aX5zucSVNrnoPhxVJ-Pli3_7-data.csv
+
     base_dir="/oak/stanford/groups/euan/projects/mhc/data/synapseCache/"
-    #health_kit_workout=parse_healthkit_workout(base_dir+"309/4661309/data.csv-5dc42cce-eab6-40c2-bd97-f51b78bb069d2034482356528994271.tmp") 
-    health_kit_data=parse_healthkit_data(base_dir+"835/51713835/LdpCK1jqfl3X4CPrkC54DwfS-data.csv")  #missing source, should error
-    #health_kit_sleep=parse_healthkit_sleep(base_dir+"596/4478596/data.csv-40ce6eb1-c4d3-4dfb-8465-d25249b128307556370121217889486.tmp") 
-    #cm=parse_motion_activity("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/620/4495620/data.csv-66e8ae65-71a4-4524-9b30-af3b92c89a86794705941809589082.tmp")
+    #health_kit_workout=parse_healthkit_workout("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/519/53353519/ZiaHJYutH7oFmuldBBWovdc0-data.csv") 
+    #health_kit_data=parse_healthkit_data(base_dir+"464/53479464/Re4XGq-MVInIYhpgNeVNPXFU-data.csv")  #missing source, should error
+    health_kit_sleep=parse_healthkit_sleep("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/206/54023206/UA85W-3sTuKDYu7Nf5RcE2_U-data.csv") 
+    #cm=parse_motion_activity("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/591/53720591/BN93l3Ttc71mwMUryZ5kJWA6-data.csv")
     #cm=parse_motion_activity("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/583/46695583/27a1ef5f-c581-4867-8f72-551af1d40c7d-data.csv")
     #health_kit_sleep=parse_healthkit_sleep("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/305/7841305/data-8978e7f6-7b47-4a08-b7a5-f45f34598e09.csv")
 

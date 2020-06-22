@@ -111,9 +111,9 @@ def parse_motion_tracker(table_path,synapseCacheDir,subjects):
     subject_fraction_vals=dict()
     subject_numentries=dict()
     
-    total_rows=len(data_table)
+    total_rows=data_table.shape[0]
     for index,row in data_table.iterrows():
-        if index%100==0:
+        if index%1000==0:
             print(str(index)+"/"+str(total_rows))
         cur_subject=row['healthCode']
         if (subjects!="all") and (cur_subject not in subject_dict):
@@ -152,10 +152,10 @@ def parse_healthkit_sleep_collector(table_path,synapseCacheDir,subjects):
         for subject in subjects:
             subject_dict[subject]=1
     subject_sleep_vals=dict()
-    total_rows=len(data_table)
+    total_rows=data_table.shape[0] 
     print("entries to parse:"+str(total_rows))
     for index,row in data_table.iterrows():
-        if index%10==0: 
+        if index%1000==0: 
             print(str(index)+'/'+str(total_rows))
         cur_subject=row['healthCode']
         if ((subjects!="all") and (cur_subject not in subject_dict)):
@@ -189,10 +189,10 @@ def parse_healthkit_data_collector(table_path,synapseCacheDir,subjects):
         for subject in subjects:
             subject_dict[subject]=1
     subject_distance_vals=dict()
-    total_rows=len(data_table)
+    total_rows=data_table.shape[0]
     print("entries to parse:"+str(str(total_rows)))
     for index,row in data_table.iterrows():
-        if index%10==0: 
+        if index%1000==0: 
             print(str(index)+"/"+str(total_rows))
         cur_subject=row['healthCode']
         if ((subjects!="all") and (cur_subject not in subject_dict)):
@@ -225,10 +225,10 @@ def parse_healthkit_workout_collector(table_path,synapseCacheDir,subjects):
         for subject in subjects:
             subject_dict[subject]=1
     subject_distance_vals=dict()
-    total_rows=len(data_table)
+    total_rows=data_table.shape[0]
     print("entries to parse:"+str(total_rows))
     for index,row in data_table.iterrows():
-        if index%10 ==0:
+        if index%1000 ==0:
             print(str(index)+"/"+str(total_rows))
         cur_subject=row['healthCode']
         if ((subjects!="all") and (cur_subject not in subject_dict)):
