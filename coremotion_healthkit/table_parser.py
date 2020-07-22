@@ -85,7 +85,7 @@ def parse_table(table_path,synapseCacheDir,data_type,subjects,aggregation_interv
                                                                                     cur_subject,
                                                                                     aggregation_interval,
                                                                                     healthkit_fields_to_use)
-    return subject_blob_vals, subject_timestamp_vals
+    return subject_blob_vals, subject_timestamp_blobs 
 
 if __name__=="__main__":
     #TESTS 

@@ -1,5 +1,6 @@
 #NOTE: tested on python 3
 #Author: annashch@stanford.edu
+import pdb 
 import numpy as np
 import pandas as pd 
 from datetime import datetime,timedelta,date
@@ -40,9 +41,12 @@ def parse_motion_activity(file_path,subject_blob_vals,subject_timestamp_blobs,cu
                 cur_time=data[start_time_field].iloc[first_row]
                 if type(cur_time)==str: 
                     cur_time=parse(cur_time) 
-
-                if cur_time in subject_timestamp_blobs[subject]: 
-                    subject_timestamp_blobs[subject][cur_time].append(cur_blob) 
+                
+                row_string=','.join([str(i) for i in data.iloc[first_row]])
+                row_hash=hash(row_string)
+                if row_hash in subject_timestamp_blobs[subject]: 
+                    subject_timestamp_blobs[subject][row_hash].append(cur_blob) 
+                    subject_timestamp_blobs[subject][row_hash].insert(0,row_string)
                     continue 
 
                 cur_activity=data[activity_type_field].iloc[first_row]
@@ -60,12 +64,17 @@ def parse_motion_activity(file_path,subject_blob_vals,subject_timestamp_blobs,cu
             new_time=data[start_time_field].iloc[row]
             if type(new_time)==str: 
                 new_time=parse(new_time) 
+            
 
-            if new_time in subject_timestamp_blobs[cur_subject]: 
-                subject_timestamp_blobs[cur_subject][new_time].append(cur_blob) 
+            #check for a duplicate blob entry
+            row_string=','.join([str(i) for i in data.iloc[first_row]])
+            row_hash=hash(row_string)
+            if row_hash in subject_timestamp_blobs[cur_subject]: 
+                subject_timestamp_blobs[cur_subject][row_hash].append(cur_blob)
+                subject_timestamp_blobs[cur_subject][row_hash].insert(0,row_string)
                 continue 
             else: 
-                subject_timestamp_blobs[cur_subject][new_time]=[cur_blob]                        
+                subject_timestamp_blobs[cur_subject][row_hash]=[cur_blob] 
             
             new_confidence=data[confidence_field].iloc[row] 
             if (new_confidence < confidence_thresh):
@@ -103,14 +112,21 @@ def parse_healthkit_sleep(file_path, subject_blob_vals, subject_timestamp_blobs,
     try:
         for index,row in data.iterrows():
             if row['startTime'] is not None:
+
+                #check for a duplicate blob entry
+                row_string=','.join([str(i) for i in row])
+                row_hash=hash(row_string)
+                if row_hash in subject_timestamp_blobs[cur_subject]: 
+                    subject_timestamp_blobs[cur_subject][row_hash].append(cur_blob)
+                    subject_timestamp_blobs[cur_subject][row_hash].insert(0,row_string)
+                    continue 
+                else: 
+                    subject_timestamp_blobs[cur_subject][row_hash]=[cur_blob] 
+
+
                 cur_time=row['startTime']
                 if type(cur_time)==str: 
                     cur_time=parse(cur_time) 
-                if cur_time not in subject_timestamp_blobs[cur_suject]: 
-                    subject_timestamp_blobs[cur_subject][cur_time]=[cur_blob]
-                else:
-                    subject_timestamp_blobs[cur_subject][cur_time].append(cur_blob)
-                    continue 
                 datatype=row['category value']
                 source=row['source']
                 sourceIdentifier=row['sourceIdentifier']
@@ -153,12 +169,17 @@ def parse_healthkit_workout(file_path,subject_blob_vals,subject_timestamp_blobs,
             cur_time=row['startTime'] 
             if type(cur_time)==str:
                 cur_time=parse(cur_time) 
-            #check for a duplicate blob entry for this timestamp
-            if cur_time in subject_timestamp_blobs[cur_subject]: 
-                subject_timestamp_blobs[cur_subject][cur_time].append(cur_blob)
+
+
+            #check for a duplicate blob entry
+            row_string=','.join([str(i) for i in row])
+            row_hash=hash(row_string)
+            if row_hash in subject_timestamp_blobs[cur_subject]: 
+                subject_timestamp_blobs[cur_subject][row_hash].append(cur_blob)
+                subject_timestamp_blobs[cur_subject][row_hash].insert(0,row_string)
                 continue 
             else: 
-                subject_timestamp_blobs[cur_subject][cur_time]=[cur_blob] 
+                subject_timestamp_blobs[cur_subject][row_hash]=[cur_blob] 
 
             datatype=row['workoutType']
             source=row['source']
@@ -208,13 +229,14 @@ def parse_healthkit_data(file_path,subject_blob_vals,subject_timestamp_blobs,cur
                 continue 
 
             #check for a duplicate blob entry
-            if type(cur_time)==str: 
-                cur_time=parse(cur_time) 
-            if cur_time in subject_timestamp_blobs[cur_subject]: 
-                subject_timestamp_blobs[cur_subject][cur_time].append(cur_blob) 
+            row_string=','.join([str(i) for i in row])
+            row_hash=hash(row_string)
+            if row_hash in subject_timestamp_blobs[cur_subject]: 
+                subject_timestamp_blobs[cur_subject][row_hash].append(cur_blob)
+                subject_timestamp_blobs[cur_subject][row_hash].insert(0,row_string)
                 continue 
             else: 
-                subject_timestamp_blobs[cur_subject][cur_time]=[cur_blob]
+                subject_timestamp_blobs[cur_subject][row_hash]=[cur_blob] 
 
             cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60))
             if cur_aggregation_interval not in subject_blob_vals[cur_subject]: 
@@ -232,6 +254,7 @@ def parse_healthkit_data(file_path,subject_blob_vals,subject_timestamp_blobs,cur
                 if value > subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Max']:
                     subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Max']=value
     except Exception as e:
+        raise
         print("There was a problem importing:"+str(file_path))
     return subject_blob_vals,subject_timestamp_blobs 
 

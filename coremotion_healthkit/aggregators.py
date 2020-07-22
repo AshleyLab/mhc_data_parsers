@@ -39,7 +39,9 @@ def aggregate_healthkit_data_collector(subject_blob_vals,outf_prefix):
                     maxval=subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Max']
                     sumvals=subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Sum']
                     nvals=subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['N']
-                    meanvals=sumvals/(nvals+0.001) #add pseudocount to avoid division by 0 
+                    if nvals==0: 
+                        nvals+=0.001  #add pseudocount to avoid division by 0 
+                    meanvals=round(sumvals/nvals,2)
                     blobs=','.join([str(i) for i in subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Blobs']])
                     outf.write(cur_subject+'\t'+
                                str(cur_aggregation_interval)+'\t'+
@@ -47,17 +49,23 @@ def aggregate_healthkit_data_collector(subject_blob_vals,outf_prefix):
                                str(datatype)+'\t'+
                                str(nvals)+'\t'+
                                str(sumvals)+'\t'+
-                               str(minvals)+'\t'+
-                               str(maxvals)+'\t'+
+                               str(minval)+'\t'+
+                               str(maxval)+'\t'+
                                str(meanvals)+'\t'+
                                str(','.join(source_tuple))+'\t'+
                                str(blobs)+'\n')
     outf.close()
 
-def aggregate_duplicate_timestamp_blobs(subject_timestamp_blobs,outprefix):
+def aggregate_duplicate_timestamp_blobs(subject_timestamp_blobs,outf_prefix):
     outf=open(outf_prefix+".duplicate.timestamps",'w')
-    outf.write('Subject\tTimestamp\tBlobs\n')
+    outf.write('Subject\tRow\tBlobs\n')
     for subject in subject_timestamp_blobs: 
-        for cur_date in subject_timestamp_blobs[subject]: 
-            outf.write(subject+'\t'+str(cur_date)+'\t'+','.join([str(i) for i in subject_timestamp_blobs[subject][cur_date]])+'\n')
+        for row_hash in subject_timestamp_blobs[subject]:
+            if len(subject_timestamp_blobs[subject][row_hash])>1:
+                #there are duplicates for this row 
+                cur_row=subject_timestamp_blobs[subject][row_hash][0]
+                blobs=subject_timestamp_blobs[subject][row_hash][1::]
+                while cur_row in blobs: 
+                    blobs.remove(cur_row) 
+                outf.write(subject+'\t'+cur_row+'\t'+','.join(blobs)+'\n')
     outf.close()

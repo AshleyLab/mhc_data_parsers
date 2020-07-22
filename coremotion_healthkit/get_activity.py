@@ -46,7 +46,7 @@ def main():
         #aggregate results        
         aggregation_choices[args.data_types[i]](subject_daily_vals,args.out_prefixes[i])       
         #print the mapping of subject -> timestamp-> duplicate blobs
-        aggregation_choices['duplicate_blobs'](subject_timestamp_blobs,args.outprefixes[i])
+        aggregation_choices['duplicate_blobs'](subject_timestamp_blobs,args.out_prefixes[i])
 
 if __name__=="__main__":
     main()
