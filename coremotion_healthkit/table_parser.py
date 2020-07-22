@@ -9,75 +9,10 @@ from os.path import isfile, join
 import warnings
 warnings.filterwarnings("ignore")
 
-#we assume a subject will rarely have multiple table entries for motion tracker and health kit data in one day,
-#but this is possible in the app, so we handle it: 
-#sum minute durations together if there is a key conflict for a given day 
-def merge_duration_dict(d1,d2):
-    #merge duration values 
-    d3=dict()
-    for entry in d1:
-        d3[entry]=d1[entry]
-    for entry in d2:
-        if entry in d3:
-            #sum by key
-            for key in d2[entry]:
-                if key in d3[entry]:
-                    for blob in d2[entry][key]: 
-                        d3[entry][key][blob]=d2[entry][key][blob]
-                else:
-                    d3[entry][key]=d2[entry][key]
-        else:
-            d3[entry]=d2[entry]
-    #update fraction values
-    d_total=dict()
-    for entry in d3:
-        d_total[entry]=timedelta(seconds=0)
-        for key in d3[entry]:
-            for blob in d3[entry][key]: 
-                d_total[entry]+=d3[entry][key][blob]
-    d_fract=dict()
-    for entry in d3:
-        d_fract[entry]=dict()
-        for key in d3[entry]:
-            d_fract[entry][key]=dict() 
-            for blob in d3[entry][key]: 
-                if d_total[entry].total_seconds()==0:
-                    d_fract[entry][key][blob]=0
-                else: 
-                    d_fract[entry][key][blob]=d3[entry][key][blob].total_seconds()/d_total[entry].total_seconds()
-    return d3,d_fract
-
-
-def merge_numentries_dict(d1,d2):
-    d3=dict()
-    for entry in d1:
-        d3[entry]=d1[entry]
-    for entry in d2:
-        if entry in d3:
-            d3[entry]=d3[entry]+d2[entry]
-        else:
-            d3[entry]=d2[entry]
-    return d3
-
-def merge_numentries_dict_healthkit(d1,d2):
-    d3=dict()
-    for day in d1:
-        d3[day]=d1[day]
-    for day in d2:
-        if day not in d3:
-            d3[day]=d2[day]
-        else:
-            for datatype in d2[day]: 
-                if datatype not in d3[day]:
-                    d3[day][datatype]=d2[day][datatype]
-                else:
-                    for source_tuple in d2[day][datatype]: 
-                        if source_tuple not in d3[day][datatype]:
-                            d3[day][datatype][source_tuple]=d2[day][datatype][source_tuple]
-                        else: 
-                            for blob in d2[day][datatype][source_tuple]: 
-                                d3[day][datatype][source_tuple][blob]=d2[day][datatype][source_tuple][blob] 
-    return d3
+synapse_parser_choices={"motion_tracker":parse_motion_activity,
+                      "health_kit_data_collector":parse_healthkit_data,
+                      "health_kit_sleep_collector":parse_healthkit_sleep,
+                      "health_kit_workout_collector":parse_healthkit_workout}
 
 def get_synapse_cache_entry(synapseCacheDir,blob_name):
     parent_dir=blob_name[-3::].lstrip('0')
@@ -99,159 +34,58 @@ def get_synapse_cache_entry(synapseCacheDir,blob_name):
     except: 
         return None
 
-def parse_motion_tracker(table_path,synapseCacheDir,subjects):
+def remove_null_blobs(data_table,column_name): 
+    '''
+    remove rows with null values for a given column
+    '''
+    print(data_table.shape)
+    data_table.dropna(axis=0,how='any',subset=[column_name],inplace=True) 
+    data_table=data_table[data_table[column_name]!="NA"]
+    data_table=data_table[data_table[column_name]!="None"]
+    data_table=data_table[pd.notnull(data_table[column_name])]
+    print(data_table.shape) 
+    return data_table 
+
+def parse_table(table_path,synapseCacheDir,data_type,subjects,aggregation_interval,healthkit_fields_to_use):
     data_table=load_table(table_path)
-    print("loaded motion tracker data table") 
+    print("loaded summary data table") 
+
+    #filter to subjects to keep 
     if subjects!="all": 
-        subject_dict=dict()
         subjects=open(subjects,'r').read().strip().split('\n')
-        for subject in subjects:
-            subject_dict[subject]=1
-    subject_duration_vals=dict()
-    subject_fraction_vals=dict()
-    subject_numentries=dict()
-    
+        data_table=data_table[data_table['healthCode'].isin(subjects)]
+        print("filtered data table to specified subjects") 
+
+    blob_col='data.csv'
+    data_table=remove_null_blobs(data_table,blob_col)
+    print("removed null blobs from data table") 
+
+    #keep track of activity metrics 
+    subject_blob_vals={}
+
+    #keep track of timestamps that occur in multiple blobs for a given subject 
+    subject_timestamp_blobs={} 
     total_rows=data_table.shape[0]
+    cur_row=0 
     for index,row in data_table.iterrows():
-        if index%1000==0:
-            print(str(index)+"/"+str(total_rows))
+        cur_row+=1
+        if cur_row%100==0:
+            print(str(cur_row)+"/"+str(total_rows))
         cur_subject=row['healthCode']
-        if (subjects!="all") and (cur_subject not in subject_dict):
-            continue
-        else:
-            blob_name=row['data.csv']
-            if pd.isna(blob_name): 
-                continue 
-            if pd.isnull(blob_name): 
-                continue 
+        if cur_subject not in subject_timestamp_blobs: 
+            subject_timestamp_blobs[cur_subject]={} 
+        if cur_subject not in subject_blob_vals:
+            subject_blob_vals[cur_subject]={} 
 
-            if blob_name.endswith('NA'):
-                continue 
-            synapseCacheFile=get_synapse_cache_entry(synapseCacheDir,blob_name)
-            [motion_tracker_duration,motion_tracker_fractions,numentries]=parse_motion_activity(synapseCacheFile)
-            if cur_subject not in subject_duration_vals:
-                subject_duration_vals[cur_subject]=motion_tracker_duration
-                subject_fraction_vals[cur_subject]=motion_tracker_fractions
-            else:
-                [merged_duration,merged_fractions]=merge_duration_dict(subject_duration_vals[cur_subject],motion_tracker_duration)
-                subject_duration_vals[cur_subject]=merged_duration
-                subject_fraction_vals[cur_subject]=merged_fractions
-            if cur_subject not in subject_numentries:
-                subject_numentries[cur_subject]=numentries
-            else:
-                subject_numentries[cur_subject]=merge_numentries_dict(subject_numentries[cur_subject],numentries)
-                
-    return [subject_duration_vals,subject_fraction_vals,subject_numentries]
-
-def parse_healthkit_sleep_collector(table_path,synapseCacheDir,subjects):
-    data_table=load_table(table_path)
-    print("loaded healthkit data table") 
-    if subjects !="all":
-        subject_dict=dict()
-        subjects=open(subjects,'r').read().strip().split('\n')
-        for subject in subjects:
-            subject_dict[subject]=1
-    subject_sleep_vals=dict()
-    total_rows=data_table.shape[0] 
-    print("entries to parse:"+str(total_rows))
-    for index,row in data_table.iterrows():
-        if index%1000==0: 
-            print(str(index)+'/'+str(total_rows))
-        cur_subject=row['healthCode']
-        if ((subjects!="all") and (cur_subject not in subject_dict)):
-            continue
-        else:
-            blob_name=row['data.csv']
-            if pd.isna(blob_name): 
-                continue 
-            if pd.isnull(blob_name): 
-                continue 
-
-            if blob_name.endswith("NA"):
-                continue
-            if blob_name.endswith('None'): 
-                continue 
-            synapseCacheFile=get_synapse_cache_entry(synapseCacheDir,blob_name)
-            health_kit_sleep=parse_healthkit_sleep(synapseCacheFile)
-            if cur_subject not in subject_sleep_vals:
-                subject_sleep_vals[cur_subject]=health_kit_sleep
-            else:
-                subject_sleep_vals[cur_subject]=merge_numentries_dict_healthkit(subject_sleep_vals[cur_subject],health_kit_sleep)
-    return subject_sleep_vals 
-
-
-def parse_healthkit_data_collector(table_path,synapseCacheDir,subjects):
-    data_table=load_table(table_path)
-    print("loaded healthkit data table") 
-    if subjects !="all":
-        subject_dict=dict()
-        subjects=open(subjects,'r').read().strip().split('\n')
-        for subject in subjects:
-            subject_dict[subject]=1
-    subject_distance_vals=dict()
-    total_rows=data_table.shape[0]
-    print("entries to parse:"+str(str(total_rows)))
-    for index,row in data_table.iterrows():
-        if index%1000==0: 
-            print(str(index)+"/"+str(total_rows))
-        cur_subject=row['healthCode']
-        if ((subjects!="all") and (cur_subject not in subject_dict)):
-            continue
-        else:
-            blob_name=row['data.csv']
-            if pd.isna(blob_name): 
-                continue 
-            if pd.isnull(blob_name): 
-                continue 
-
-            if blob_name.endswith("NA"):
-                continue
-            if blob_name.endswith('None'): 
-                continue 
-            synapseCacheFile=get_synapse_cache_entry(synapseCacheDir,blob_name)
-            health_kit_distance=parse_healthkit_data(synapseCacheFile)
-            if cur_subject not in subject_distance_vals:
-                subject_distance_vals[cur_subject]=health_kit_distance
-            else:
-                subject_distance_vals[cur_subject]=merge_numentries_dict_healthkit(subject_distance_vals[cur_subject],health_kit_distance)
-    return subject_distance_vals 
-        
-def parse_healthkit_workout_collector(table_path,synapseCacheDir,subjects):
-    data_table=load_table(table_path)
-    print("loaded healthkit data table") 
-    if subjects !="all":
-        subject_dict=dict()
-        subjects=open(subjects,'r').read().strip().split('\n')
-        for subject in subjects:
-            subject_dict[subject]=1
-    subject_distance_vals=dict()
-    total_rows=data_table.shape[0]
-    print("entries to parse:"+str(total_rows))
-    for index,row in data_table.iterrows():
-        if index%1000 ==0:
-            print(str(index)+"/"+str(total_rows))
-        cur_subject=row['healthCode']
-        if ((subjects!="all") and (cur_subject not in subject_dict)):
-            continue
-        else:
-            blob_name=row['data.csv'] 
-            if pd.isna(blob_name): 
-                continue 
-            if pd.isnull(blob_name): 
-                continue 
-            if blob_name.endswith("NA"):
-                continue
-            if blob_name.endswith('None'): 
-                continue 
-            synapseCacheFile=get_synapse_cache_entry(synapseCacheDir,blob_name)
-            health_kit_distance=parse_healthkit_workout(synapseCacheFile)
-            if cur_subject not in subject_distance_vals:
-                subject_distance_vals[cur_subject]=health_kit_distance
-            else:
-                subject_distance_vals[cur_subject]=merge_numentries_dict_healthkit(subject_distance_vals[cur_subject],health_kit_distance)
-    return subject_distance_vals 
-        
-
+        blob_name=row[blob_col]
+        synapseCacheFile=get_synapse_cache_entry(synapseCacheDir,blob_name)
+        subject_blob_vals,subject_timestamp_blobs=synapse_parser_choices[data_type](synapseCacheFile,
+                                                                                    subject_blob_vals,
+                                                                                    subject_timestamp_blobs,
+                                                                                    cur_subject,
+                                                                                    aggregation_interval,
+                                                                                    healthkit_fields_to_use)
+    return subject_blob_vals, subject_timestamp_vals
 
 if __name__=="__main__":
     #TESTS 

@@ -2,53 +2,62 @@ from datetime import datetime,timedelta
 from dateutil.parser import parse
 import pdb 
 
-
-
-def aggregate_motion_tracker(subject_daily_vals,outf_prefix): 
-    duration_vals=subject_daily_vals[0]
-    fraction_vals=subject_daily_vals[1]
-    numentries_vals=subject_daily_vals[2]
-    
+def aggregate_motion_tracker(subject_blob_vals,outf_prefix):     
     outf=open(outf_prefix,'w')
     outf.write('Subject\tDate\tWeekday\tActivity\tDuration_in_Minutes\tFraction\tNumentries\tSourceBlobs\n')
-    for subject in duration_vals: 
-        for day in duration_vals[subject]: 
-            cur_weekday=day.weekday() 
-            numentries=numentries_vals[subject][day]
-            for activity in duration_vals[subject][day]: 
-                #sum durations across blobs 
-                blobs=','.join([str(i) for i in duration_vals[subject][day][activity].keys()])
-                #get the duration in minutes 
-                duration=sum([i.total_seconds() for i in duration_vals[subject][day][activity].values()])/60
-                fraction=0 
-                if activity in fraction_vals[subject][day]: 
-                    fraction=sum([i for i in fraction_vals[subject][day][activity].values()])
-                outf.write(subject+'\t'+
-                           str(day)+'\t'+
+    for cur_subject in subject_blob_vals: 
+        for cur_aggregation_interval in subject_blob_vals[cur_subject]: 
+            cur_weekday=cur_aggregation_interval.weekday() 
+            total_minutes=subject_blob_values[cur_subject][cur_aggregation_interval]['TotalMinutes']
+            for cur_activity in subject_blob_vals[cur_subject][cur_aggregation_interval]: 
+                if cur_activity=="TotalMinutes":
+                    continue
+                cur_activity_minutes=subject_blob_vals[cur_subject][cur_aggregation_interval][cur_activity]['Minutes']
+                cur_activity_fraction=cur_activity_minutes/(total_minutes+.001) #add pseudocount to avoid division by 0 
+                cur_activity_entries=subject_blob_vals[cur_subject][cur_aggregation_interval][cur_activity]['N']
+                cur_activity_blobs=','.join([str(i) for i in subject_blob_vals[cur_subject][cur_aggregation_interval][cur_activity]['Blobs']])
+
+                outf.write(cur_subject+'\t'+
+                           str(cur_aggreagtion_interval)+'\t'+
                            str(cur_weekday)+'\t'+
-                           activity+'\t'+
-                           str(duration)+'\t'+
-                           str(fraction)+'\t'+
-                           str(numentries)+'\t'+
-                           str(blobs)+'\n')
-                
+                           cur_activity+'\t'+
+                           str(cur_activity_minutes)+'\t'+
+                           str(cur_activity_fraction)+'\t'+
+                           str(cur_activity_entries)+'\t'+
+                           str(cur_activity_blobs)+'\n')
+    outf.close()            
                     
-def aggregate_healthkit_data_collector(subject_daily_vals,outf_prefix):
+def aggregate_healthkit_data_collector(subject_blob_vals,outf_prefix):
     outf=open(outf_prefix,'w')
-    outf.write("Subject\tDate\tWeekDay\tMetric\tValue\tSource\tSourceBlobs\n")
-    for subject in subject_daily_vals: 
-        for day in subject_daily_vals[subject]: 
-            cur_weekday=day.weekday() 
-            for metric in subject_daily_vals[subject][day]: 
-                for source in subject_daily_vals[subject][day][metric]: 
-                    blobs=','.join([str(i) for i in subject_daily_vals[subject][day][metric][source].keys()])
-                    value=sum([i for i in subject_daily_vals[subject][day][metric][source].values()])
-                    outf.write(subject+'\t'+
-                               str(day)+'\t'+
+    outf.write("Subject\tDate\tWeekDay\tMetric\tN\tSum\tMin\tMax\tMean\tSource\tSourceBlobs\n")
+    for cur_subject in subject_blob_vals: 
+        for cur_aggregation_interval in subject_blob_vals[cur_subject]: 
+            cur_weekday=cur_aggregation_interval.weekday()
+            for datatype in subject_blob_vals[cur_subject][cur_aggregation_interval]: 
+                for source_tuple in subject_blob_vals[cur_subject][cur_aggregation_interval][datatype]: 
+                    minval=subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Min']
+                    maxval=subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Max']
+                    sumvals=subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Sum']
+                    nvals=subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['N']
+                    meanvals=sumvals/(nvals+0.001) #add pseudocount to avoid division by 0 
+                    blobs=','.join([str(i) for i in subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Blobs']])
+                    outf.write(cur_subject+'\t'+
+                               str(cur_aggregation_interval)+'\t'+
                                str(cur_weekday)+'\t'+
-                               str(metric)+'\t'+
-                               str(value)+'\t'+
-                               str(source)+'\t'+
+                               str(datatype)+'\t'+
+                               str(nvals)+'\t'+
+                               str(sumvals)+'\t'+
+                               str(minvals)+'\t'+
+                               str(maxvals)+'\t'+
+                               str(meanvals)+'\t'+
+                               str(','.join(source_tuple))+'\t'+
                                str(blobs)+'\n')
+    outf.close()
 
-
+def aggregate_duplicate_timestamp_blobs(subject_timestamp_blobs,outprefix):
+    outf=open(outf_prefix+".duplicate.timestamps",'w')
+    outf.write('Subject\tTimestamp\tBlobs\n')
+    for subject in subject_timestamp_blobs: 
+        for cur_date in subject_timestamp_blobs[subject]: 
+            outf.write(subject+'\t'+str(cur_date)+'\t'+','.join([str(i) for i in subject_timestamp_blobs[subject][cur_date]])+'\n')
+    outf.close()
