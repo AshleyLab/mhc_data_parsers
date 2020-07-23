@@ -1,7 +1,17 @@
+from datetime import datetime,timedelta,date
+from dateutil.parser import parse
+
 def qc_hk(datatype,value,startTime,endTime):
     #datatype=datatype.decode('utf-8') 
     if datatype not in ["HKQuantityTypeIdentifierDistanceWalk","HKQuantityTypeIdentifierStepCount"]:
         return True 
+    try:
+        if type(startTime)==str: 
+            startTime=parse(startTime)
+        if type(endTime)==str: 
+            endTime=parse(endTime) 
+    except: 
+        return False 
     if datatype=="HKQuantityTypeIdentifierDistanceWalk": 
         time_diff=(endTime-startTime).total_seconds()/60.0
         speed=value/time_diff
