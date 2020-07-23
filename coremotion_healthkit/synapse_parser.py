@@ -56,7 +56,10 @@ def parse_motion_activity(file_path,subject_blob_vals,subject_timestamp_blobs,cu
     #parse through all remaining rows 
     for row in range(first_row+1,num_rows):
         try:
-            cur_tz=cur_time.tz 
+            try:
+                cur_tz=cur_time.tz
+            except: 
+                cur_tz=cur_time.tzinfo 
             cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
             
             new_activity=data[activity_type_field].iloc[row]
@@ -116,7 +119,10 @@ def parse_healthkit_sleep(file_path, subject_blob_vals, subject_timestamp_blobs,
                 cur_time=row['startTime']
                 if type(cur_time)==str: 
                     cur_time=parse(cur_time) 
-                cur_tz=cur_time.tz 
+                try:
+                    cur_tz=cur_time.tz 
+                except: 
+                    cur_tz=cur_time.tzinfo 
                 cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
                 value=row['value']
                 
@@ -180,7 +186,10 @@ def parse_healthkit_workout(file_path,subject_blob_vals,subject_timestamp_blobs,
             source_tuple=tuple([source,sourceIdentifier])
             energy=row['energy consumed']
             distance=row['total distance'] 
-            cur_tz=cur_time.tz
+            try:
+                cur_tz=cur_time.tz
+            except: 
+                cur_tz=cur_time.tzinfo
             cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
                 
             if cur_aggregation_interval not in subject_blob_vals[cur_subject]: 
@@ -232,7 +241,10 @@ def parse_healthkit_data(file_path,subject_blob_vals,subject_timestamp_blobs,cur
             
             if(type(cur_time)==str): 
                 cur_time=parse(cur_time)
-            cur_tz=cur_time.tz
+            try:
+                cur_tz=cur_time.tz
+            except: 
+                cur_tz=cur_time.tzinfo
             cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
             if cur_aggregation_interval not in subject_blob_vals[cur_subject]: 
                 subject_blob_vals[cur_subject][cur_aggregation_interval]={}
