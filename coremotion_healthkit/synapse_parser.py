@@ -43,10 +43,8 @@ def parse_motion_activity(file_path,subject_blob_vals,subject_timestamp_blobs,cu
                     cur_time=parse(cur_time) 
                 
                 row_string=','.join([str(i) for i in data.iloc[first_row]])
-                row_hash=hash(row_string)
-                if row_hash in subject_timestamp_blobs[subject]: 
-                    subject_timestamp_blobs[subject][row_hash].append(cur_blob) 
-                    subject_timestamp_blobs[subject][row_hash].insert(0,row_string)
+                if row_string in subject_timestamp_blobs[subject]: 
+                    subject_timestamp_blobs[subject][row_string].append(cur_blob) 
                     continue 
 
                 cur_activity=data[activity_type_field].iloc[first_row]
@@ -58,7 +56,8 @@ def parse_motion_activity(file_path,subject_blob_vals,subject_timestamp_blobs,cu
     #parse through all remaining rows 
     for row in range(first_row+1,num_rows):
         try:
-            cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60))
+            cur_tz=cur_time.tz 
+            cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
             
             new_activity=data[activity_type_field].iloc[row]
             new_time=data[start_time_field].iloc[row]
@@ -67,14 +66,12 @@ def parse_motion_activity(file_path,subject_blob_vals,subject_timestamp_blobs,cu
             
 
             #check for a duplicate blob entry
-            row_string=','.join([str(i) for i in data.iloc[first_row]])
-            row_hash=hash(row_string)
-            if row_hash in subject_timestamp_blobs[cur_subject]: 
-                subject_timestamp_blobs[cur_subject][row_hash].append(cur_blob)
-                subject_timestamp_blobs[cur_subject][row_hash].insert(0,row_string)
+            row_string=','.join([str(i) for i in data.iloc[row]])
+            if row_string in subject_timestamp_blobs[cur_subject]: 
+                subject_timestamp_blobs[cur_subject][row_string].append(cur_blob)
                 continue 
             else: 
-                subject_timestamp_blobs[cur_subject][row_hash]=[cur_blob] 
+                subject_timestamp_blobs[cur_subject][row_string]=[cur_blob] 
             
             new_confidence=data[confidence_field].iloc[row] 
             if (new_confidence < confidence_thresh):
@@ -104,40 +101,38 @@ def parse_motion_activity(file_path,subject_blob_vals,subject_timestamp_blobs,cu
 
 def parse_healthkit_sleep(file_path, subject_blob_vals, subject_timestamp_blobs,cur_subject,aggregation_interval,healthkit_fields_to_use):
     tally_dict=dict() 
-    cur_blob,data=open_healthkit_sleep(file_path)
+    cur_blob, data=open_healthkit_sleep(file_path)
     if data is None: 
-        return tally_dict,subject_timestamp_blobs        
-    
+        return subject_blob_vals,subject_timestamp_blobs        
     #get the duration of each activity by day
     try:
         for index,row in data.iterrows():
             if row['startTime'] is not None:
 
-                #check for a duplicate blob entry
-                row_string=','.join([str(i) for i in row])
-                row_hash=hash(row_string)
-                if row_hash in subject_timestamp_blobs[cur_subject]: 
-                    subject_timestamp_blobs[cur_subject][row_hash].append(cur_blob)
-                    subject_timestamp_blobs[cur_subject][row_hash].insert(0,row_string)
-                    continue 
-                else: 
-                    subject_timestamp_blobs[cur_subject][row_hash]=[cur_blob] 
-
-
-                cur_time=row['startTime']
-                if type(cur_time)==str: 
-                    cur_time=parse(cur_time) 
                 datatype=row['category value']
                 source=row['source']
                 sourceIdentifier=row['sourceIdentifier']
                 source_tuple=tuple([source,sourceIdentifier])
-                cur_aggregation_interval=(cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60).gmtime() 
+                cur_time=row['startTime']
+                if type(cur_time)==str: 
+                    cur_time=parse(cur_time) 
+                cur_tz=cur_time.tz 
+                cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
                 value=row['value']
                 
+                row_string=','.join([str(i) for i in row])
+                if row_string in subject_timestamp_blobs[cur_subject]: 
+                    subject_timestamp_blobs[cur_subject][row_string].append(cur_blob)
+                    continue 
+                else: 
+                    subject_timestamp_blobs[cur_subject][row_string]=[cur_blob] 
+
                 if cur_aggregation_interval not in subject_blob_vals[cur_subject]: 
                     subject_blob_vals[cur_subject][cur_aggregation_interval]={}
+
                 if datatype not in subject_blob_vals[cur_subject][cur_aggregation_interval]: 
                     subject_blob_vals[cur_subject][cur_aggregation_interval][datatype]={} 
+
                 if source_tuple not in subject_blob_vals[cur_subject][cur_aggregation_interval][datatype]: 
                     subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]={'Min':value,'Max':value,'N':1,'Sum':value,'Blobs':set([cur_blob])} 
                 else: 
@@ -152,10 +147,10 @@ def parse_healthkit_sleep(file_path, subject_blob_vals, subject_timestamp_blobs,
     except Exception as e:
         raise
         print("There was a problem parsing:"+str(file_path))
-    return subject_timestamp_blobs, tally_dict
+    return subject_blob_vals, subject_timestamp_blobs 
 
 def parse_healthkit_workout(file_path,subject_blob_vals,subject_timestamp_blobs,cur_subject,aggregation_interval,healthkit_fields_to_use): 
-    cur_blob,data=open_healthkit_workout(filepath) 
+    cur_blob,data=open_healthkit_workout(file_path) 
     if data is None: 
         return subject_blob_vals, subject_timestamp_blobs 
 
@@ -173,13 +168,11 @@ def parse_healthkit_workout(file_path,subject_blob_vals,subject_timestamp_blobs,
 
             #check for a duplicate blob entry
             row_string=','.join([str(i) for i in row])
-            row_hash=hash(row_string)
-            if row_hash in subject_timestamp_blobs[cur_subject]: 
-                subject_timestamp_blobs[cur_subject][row_hash].append(cur_blob)
-                subject_timestamp_blobs[cur_subject][row_hash].insert(0,row_string)
+            if row_string in subject_timestamp_blobs[cur_subject]: 
+                subject_timestamp_blobs[cur_subject][row_string].append(cur_blob)
                 continue 
             else: 
-                subject_timestamp_blobs[cur_subject][row_hash]=[cur_blob] 
+                subject_timestamp_blobs[cur_subject][row_string]=[cur_blob] 
 
             datatype=row['workoutType']
             source=row['source']
@@ -187,7 +180,8 @@ def parse_healthkit_workout(file_path,subject_blob_vals,subject_timestamp_blobs,
             source_tuple=tuple([source,sourceIdentifier])
             energy=row['energy consumed']
             distance=row['total distance'] 
-            cur_aggregation_interval=(cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60).gmtime() 
+            cur_tz=cur_time.tz
+            cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
                 
             if cur_aggregation_interval not in subject_blob_vals[cur_subject]: 
                 subject_blob_vals[cur_subject][cur_aggregation_interval]={}
@@ -230,15 +224,16 @@ def parse_healthkit_data(file_path,subject_blob_vals,subject_timestamp_blobs,cur
 
             #check for a duplicate blob entry
             row_string=','.join([str(i) for i in row])
-            row_hash=hash(row_string)
-            if row_hash in subject_timestamp_blobs[cur_subject]: 
-                subject_timestamp_blobs[cur_subject][row_hash].append(cur_blob)
-                subject_timestamp_blobs[cur_subject][row_hash].insert(0,row_string)
+            if row_string in subject_timestamp_blobs[cur_subject]: 
+                subject_timestamp_blobs[cur_subject][row_string].append(cur_blob)
                 continue 
             else: 
-                subject_timestamp_blobs[cur_subject][row_hash]=[cur_blob] 
-
-            cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60))
+                subject_timestamp_blobs[cur_subject][row_string]=[cur_blob] 
+            
+            if(type(cur_time)==str): 
+                cur_time=parse(cur_time)
+            cur_tz=cur_time.tz
+            cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
             if cur_aggregation_interval not in subject_blob_vals[cur_subject]: 
                 subject_blob_vals[cur_subject][cur_aggregation_interval]={}
             if datatype not in subject_blob_vals[cur_subject][cur_aggregation_interval]: 

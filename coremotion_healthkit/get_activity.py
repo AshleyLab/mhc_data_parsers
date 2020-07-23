@@ -8,7 +8,7 @@ import pdb
 aggregation_choices={"motion_tracker":aggregate_motion_tracker,
                      "health_kit_data_collector":aggregate_healthkit_data_collector,
                      "health_kit_sleep_collector":aggregate_healthkit_data_collector,
-                     "health_kit_workout_collector":aggregate_healthkit_data_collector,
+                     "health_kit_workout_collector":aggregate_healthkit_workout_collector,
                      "duplicate_blobs":aggregate_duplicate_timestamp_blobs}
 
 def parse_args():
