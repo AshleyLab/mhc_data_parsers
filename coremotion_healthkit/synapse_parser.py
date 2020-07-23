@@ -29,10 +29,6 @@ def parse_motion_activity(file_path,subject_blob_vals,subject_timestamp_blobs,cu
             activity_type_field='activityTypeName'
             confidence_field='confidenceRaw'
 
-        cur_time=data[start_time_field].iloc[first_row]
-        if(type(cur_time)==str): 
-            cur_time=parse(cur_time)
-        
         cur_activity=data[activity_type_field].iloc[first_row]
         cur_confidence=data[confidence_field].iloc[first_row] 
         while (cur_activity=="not available") and (first_row <(num_rows-1)) and (cur_confidence>0) :
@@ -40,8 +36,10 @@ def parse_motion_activity(file_path,subject_blob_vals,subject_timestamp_blobs,cu
             try:
                 cur_time=data[start_time_field].iloc[first_row]
                 if type(cur_time)==str: 
-                    cur_time=parse(cur_time) 
-                
+                    try:
+                        cur_time=parse(cur_time) 
+                    except:
+                        continue
                 row_string=','.join([str(i) for i in data.iloc[first_row]])
                 if row_string in subject_timestamp_blobs[subject]: 
                     subject_timestamp_blobs[subject][row_string].append(cur_blob) 
@@ -118,7 +116,10 @@ def parse_healthkit_sleep(file_path, subject_blob_vals, subject_timestamp_blobs,
                 source_tuple=tuple([source,sourceIdentifier])
                 cur_time=row['startTime']
                 if type(cur_time)==str: 
-                    cur_time=parse(cur_time) 
+                    try:
+                        cur_time=parse(cur_time) 
+                    except: 
+                        continue
                 try:
                     cur_tz=cur_time.tz 
                 except: 
@@ -169,9 +170,10 @@ def parse_healthkit_workout(file_path,subject_blob_vals,subject_timestamp_blobs,
         for index,row in data.iterrows():
             cur_time=row['startTime'] 
             if type(cur_time)==str:
-                cur_time=parse(cur_time) 
-
-
+                try:
+                    cur_time=parse(cur_time) 
+                except: 
+                    continue
             #check for a duplicate blob entry
             row_string=','.join([str(i) for i in row])
             if row_string in subject_timestamp_blobs[cur_subject]: 
@@ -240,7 +242,10 @@ def parse_healthkit_data(file_path,subject_blob_vals,subject_timestamp_blobs,cur
                 subject_timestamp_blobs[cur_subject][row_string]=[cur_blob] 
             
             if(type(cur_time)==str): 
-                cur_time=parse(cur_time)
+                try:
+                    cur_time=parse(cur_time)
+                except: 
+                    continue
             try:
                 cur_tz=cur_time.tz
             except: 
