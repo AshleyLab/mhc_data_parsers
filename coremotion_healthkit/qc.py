@@ -13,7 +13,10 @@ def qc_hk(datatype,value,startTime,endTime):
     except: 
         return False 
     if datatype=="HKQuantityTypeIdentifierDistanceWalk": 
-        time_diff=(endTime-startTime).total_seconds()/60.0
+        try:
+            time_diff=(endTime-startTime).total_seconds()/60.0
+        except: 
+            return False 
         speed=value/time_diff
         if speed > 750: 
             print('BAD SPEED') 
@@ -21,7 +24,10 @@ def qc_hk(datatype,value,startTime,endTime):
         else: 
             return True 
     if datatype=="HKQuantityTypeIdentifierStepCount": 
-        time_diff=(endTime-startTime).total_seconds()/60.0
+        try:
+            time_diff=(endTime-startTime).total_seconds()/60.0
+        except: 
+            return False 
         if time_diff==0: 
             return True
         rate=value/time_diff 

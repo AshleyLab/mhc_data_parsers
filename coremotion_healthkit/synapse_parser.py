@@ -101,7 +101,6 @@ def parse_motion_activity(file_path,subject_blob_vals,subject_timestamp_blobs,cu
 
 
 def parse_healthkit_sleep(file_path, subject_blob_vals, subject_timestamp_blobs,cur_subject,aggregation_interval,healthkit_fields_to_use):
-    tally_dict=dict() 
     cur_blob, data=open_healthkit_sleep(file_path)
     if data is None: 
         return subject_blob_vals,subject_timestamp_blobs        
@@ -212,7 +211,7 @@ def parse_healthkit_workout(file_path,subject_blob_vals,subject_timestamp_blobs,
 def parse_healthkit_data(file_path,subject_blob_vals,subject_timestamp_blobs,cur_subject,aggregation_interval,healthkit_fields_to_use):
     cur_blob,data=open_healthkit_data(file_path) 
     if data is None: 
-        return tally_dict,subject_timestamp_blobs 
+        return subject_blob_vals,subject_timestamp_blobs 
     if healthkit_fields_to_use is not 'all': 
         data=data[data['type'].isin(healthkit_fields_to_use)]
     #get the duration of each activity by day
