@@ -8,6 +8,7 @@ def parse_args():
     parser.add_argument("--first",type=int)
     parser.add_argument("--last",type=int)
     parser.add_argument("--outf")
+    parser.add_argument("--suffix",default="") 
     return parser.parse_args()
 
 def main():
@@ -18,7 +19,7 @@ def main():
     last_index=args.last
     for index in range(first_index,last_index+1):
         print(str(index))
-        data=open(args.prefix+str(index),'r').read().strip().split('\n')
+        data=open(args.prefix+str(index)+args.suffix,'r').read().strip().split('\n')
         header=data[0]
         body=data[1::]
         if is_first==True:
