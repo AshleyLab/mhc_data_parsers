@@ -1,6 +1,7 @@
 #NOTE: tested on python 3
 #Author: annashch@stanford.edu
 import pdb 
+import pytz
 import numpy as np
 import pandas as pd 
 from datetime import datetime,timedelta,date
@@ -60,9 +61,10 @@ def parse_motion_activity(file_path,subject_blob_vals,subject_timestamp_blobs,cu
                 try:
                     cur_tz=cur_time.tzinfo 
                 except: 
-                    continue 
+                    cur_tz=pytz.UTC
             cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
-            
+            if cur_aggregation_interval.tzinfo is None: 
+                cur_aggregation_interval=pytz.utc.localize(cur_aggregation_interval)
             new_activity=data[activity_type_field].iloc[row]
             new_time=data[start_time_field].iloc[row]
             if type(new_time)==str: 
@@ -128,8 +130,11 @@ def parse_healthkit_sleep(file_path, subject_blob_vals, subject_timestamp_blobs,
                     try:
                         cur_tz=cur_time.tzinfo 
                     except: 
-                        continue 
+                        cur_tz=pytz.UTC
                 cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
+                if cur_aggregation_interval.tzinfo is None: 
+                    cur_aggregation_interval=pytz.utc.localize(cur_aggregation_interval)
+
                 value=row['value']
                 
                 row_string=','.join([str(i) for i in row])
@@ -199,9 +204,11 @@ def parse_healthkit_workout(file_path,subject_blob_vals,subject_timestamp_blobs,
                 try:
                     cur_tz=cur_time.tzinfo
                 except: 
-                    continue 
+                    cur_tz=pytz.UTC
             cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
-                
+            if cur_aggregation_interval.tzinfo is None: 
+                cur_aggregation_interval=pytz.utc.localize(cur_aggregation_interval)
+
             if cur_aggregation_interval not in subject_blob_vals[cur_subject]: 
                 subject_blob_vals[cur_subject][cur_aggregation_interval]={}
             if datatype not in subject_blob_vals[cur_subject][cur_aggregation_interval]: 
@@ -260,8 +267,11 @@ def parse_healthkit_data(file_path,subject_blob_vals,subject_timestamp_blobs,cur
                 try:
                     cur_tz=cur_time.tzinfo
                 except: 
-                    continue
+                    cur_tz=pytz.UTC
             cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
+            if cur_aggregation_interval.tzinfo is None: 
+                cur_aggregation_interval=pytz.utc.localize(cur_aggregation_interval)
+
             if cur_aggregation_interval not in subject_blob_vals[cur_subject]: 
                 subject_blob_vals[cur_subject][cur_aggregation_interval]={}
             if datatype not in subject_blob_vals[cur_subject][cur_aggregation_interval]: 
@@ -285,17 +295,12 @@ if __name__=="__main__":
     #TESTS for sherlock
     import pdb
     #TEST THIS:
-    totest="/oak/stanford/groups/euan/projects/mhc/data/synapseCache/462/53682462/aX5zucSVNrnoPhxVJ-Pli3_7-data.csv"
 
+    #totest="/oak/stanford/groups/euan/projects/mhc/data/synapseCache/462/53682462/aX5zucSVNrnoPhxVJ-Pli3_7-data.csv"
+    totest="/oak/stanford/groups/euan/projects/mhc/data/synapseCache/283/54263283/ckTBHR5A0PNmOj2qKZn1QqQP-data.csv" 
     base_dir="/oak/stanford/groups/euan/projects/mhc/data/synapseCache/"
-    health_kit_data,subject_timestamp_blobs=parse_healthkit_data(totest,{},"None")
-    #health_kit_workout=parse_healthkit_workout("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/519/53353519/ZiaHJYutH7oFmuldBBWovdc0-data.csv") 
-    #health_kit_data=parse_healthkit_data(base_dir+"464/53479464/Re4XGq-MVInIYhpgNeVNPXFU-data.csv",{},'None')  #missing source, should error
-    #health_kit_sleep=parse_healthkit_sleep("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/206/54023206/UA85W-3sTuKDYu7Nf5RcE2_U-data.csv") 
-    #cm=parse_motion_activity("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/591/53720591/BN93l3Ttc71mwMUryZ5kJWA6-data.csv")
-    #cm=parse_motion_activity("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/583/46695583/27a1ef5f-c581-4867-8f72-551af1d40c7d-data.csv")
-    #health_kit_sleep=parse_healthkit_sleep("/oak/stanford/groups/euan/projects/mhc/data/synapseCache/305/7841305/data-8978e7f6-7b47-4a08-b7a5-f45f34598e09.csv")
-
+    healthCode="2c7b48bb-fd41-447e-b189-984dd43f4048"
+    health_kit_data,subject_timestamp_blobs=parse_healthkit_data(totest,{healthCode:{}},{healthCode:{}},healthCode,10,["HKQuantityTypeIdentifierStepCount"])
     pdb.set_trace() 
 
 
