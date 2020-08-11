@@ -62,7 +62,7 @@ def aggregate_healthkit_data_collector(subject_blob_vals,outf_prefix,get_median=
                                ','.join([str(i) for i in source_tuple])+'\t'+
                                str(blobs))
                     if get_median is True: 
-                        outf.write(str(median_val))
+                        outf.write('\t'+str(median_val))
                     outf.write('\n')
     outf.close()
 def aggregate_healthkit_workout_collector(subject_blob_vals,outf_prefix,get_median=False):

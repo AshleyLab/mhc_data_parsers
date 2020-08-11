@@ -96,10 +96,14 @@ def parse_motion_activity(file_path,subject_blob_vals,subject_timestamp_blobs,cu
                     subject_blob_vals[cur_subject][cur_aggregation_interval]['TotalMinutes']+=duration
                 if cur_activity not in subject_blob_vals[cur_subject][cur_aggregation_interval]:
                     subject_blob_vals[cur_subject][cur_aggregation_interval][cur_activity]={"Minutes":duration,"N":1,'Blobs':set([cur_blob])}
+                    if get_median is True: 
+                        subject_blob_vals[cur_subject][cur_aggregation_interval][cur_activity]['Median']=[duration]
                 else: 
                     subject_blob_vals[cur_subject][cur_aggregation_interval][cur_activity]['Minutes']+=duration
                     subject_blob_vals[cur_subject][cur_aggregation_interval][cur_activity]['N']+=1
                     subject_blob_vals[cur_subject][cur_aggregation_interval][cur_activity]['Blobs'].add(cur_blob)
+                    if get_median is True: 
+                        subject_blob_vals[cur_subject][cur_aggregation_interval][cur_activity]['Median'].append(duration)
                     
             cur_activity=new_activity
             cur_time=new_time
@@ -295,6 +299,9 @@ def parse_healthkit_data(file_path,subject_blob_vals,subject_timestamp_blobs,cur
                 subject_blob_vals[cur_subject][cur_aggregation_interval][datatype]={} 
             if source_tuple not in subject_blob_vals[cur_subject][cur_aggregation_interval][datatype]: 
                 subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]={'Min':value,'Max':value,'Sum':value,'N':1,'Blobs':set([cur_blob])}
+                if get_median is True: 
+                    subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Median']=[value]
+
             else: 
                 subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['N']+=1
                 subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Sum']+=value
@@ -303,6 +310,9 @@ def parse_healthkit_data(file_path,subject_blob_vals,subject_timestamp_blobs,cur
                     subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Min']=value
                 if value > subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Max']:
                     subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Max']=value
+                if get_median is True: 
+                    subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Median'].append(value)
+
     except Exception as e:
         raise
         print("There was a problem importing:"+str(file_path))
