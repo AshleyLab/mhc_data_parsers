@@ -45,7 +45,7 @@ def aggregate_healthkit_data_collector(subject_blob_vals,outf_prefix,get_median=
                     sumvals=subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Sum']
                     nvals=subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['N']
                     if get_median is True: 
-                        median_val=statistics.median(subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['median'])
+                        median_val=statistics.median(subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Median'])
                     if nvals==0: 
                         nvals+=0.001  #add pseudocount to avoid division by 0 
                     meanvals=round(sumvals/nvals,2)
