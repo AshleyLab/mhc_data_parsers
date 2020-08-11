@@ -21,6 +21,7 @@ def parse_args():
     parser.add_argument("--subjects",default="all")
     parser.add_argument("--aggregation_interval", type=int, default=1440, help="number of minutes to use as aggregation interval")
     parser.add_argument("--pickle_dict",default=False) 
+    parser.add_argument("--get_median",action="store_true",default=False) 
     return parser.parse_args()
 
 
@@ -39,12 +40,13 @@ def main():
                                                                args.data_types[i],
                                                                args.subjects,
                                                                args.aggregation_interval,
-                                                               args.health_kit_fields_to_use)
+                                                               args.health_kit_fields_to_use,
+                                                               args.get_median)
         if args.pickle_dict==True: 
             pickle.dump(subject_daily_vals,open(args.out_prefixes[i]+".p",'wb'))
         print("aggregating results!")
         #aggregate results        
-        aggregation_choices[args.data_types[i]](subject_daily_vals,args.out_prefixes[i])       
+        aggregation_choices[args.data_types[i]](subject_daily_vals,args.out_prefixes[i],args.get_median)       
         #print the mapping of subject -> timestamp-> duplicate blobs
         aggregation_choices['duplicate_blobs'](subject_timestamp_blobs,args.out_prefixes[i])
 

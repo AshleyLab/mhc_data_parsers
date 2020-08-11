@@ -46,7 +46,7 @@ def remove_null_blobs(data_table,column_name):
     print(data_table.shape) 
     return data_table 
 
-def parse_table(table_path,synapseCacheDir,data_type,subjects,aggregation_interval,healthkit_fields_to_use):
+def parse_table(table_path,synapseCacheDir,data_type,subjects,aggregation_interval,healthkit_fields_to_use,get_median=False):
     data_table=load_table(table_path)
     print("loaded summary data table") 
 
@@ -84,7 +84,8 @@ def parse_table(table_path,synapseCacheDir,data_type,subjects,aggregation_interv
                                                                                     subject_timestamp_blobs,
                                                                                     cur_subject,
                                                                                     aggregation_interval,
-                                                                                    healthkit_fields_to_use)
+                                                                                    healthkit_fields_to_use,
+                                                                                    get_median=get_median)
     return subject_blob_vals, subject_timestamp_blobs 
 
 if __name__=="__main__":

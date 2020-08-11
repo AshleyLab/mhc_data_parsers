@@ -1,8 +1,9 @@
 from datetime import datetime,timedelta
 from dateutil.parser import parse
+import statistics
 import pdb 
 
-def aggregate_motion_tracker(subject_blob_vals,outf_prefix):     
+def aggregate_motion_tracker(subject_blob_vals,outf_prefix,get_median=False):     
     outf=open(outf_prefix,'w')
     outf.write('Subject\tDate\tWeekday\tActivity\tDuration_in_Minutes\tFraction\tNumentries\tSourceBlobs\n')
     for cur_subject in subject_blob_vals: 
@@ -27,9 +28,13 @@ def aggregate_motion_tracker(subject_blob_vals,outf_prefix):
                            str(cur_activity_blobs)+'\n')
     outf.close()            
                     
-def aggregate_healthkit_data_collector(subject_blob_vals,outf_prefix):
+def aggregate_healthkit_data_collector(subject_blob_vals,outf_prefix,get_median=False):
     outf=open(outf_prefix,'w')
-    outf.write("Subject\tDate\tWeekDay\tMetric\tN\tSum\tMin\tMax\tMean\tSource\tSourceBlobs\n")
+    outf.write("Subject\tDate\tWeekDay\tMetric\tN\tSum\tMin\tMax\tMean\tSource\tSourceBlobs")
+    if get_median is True: 
+        outf.write("\tMedian\n")
+    else: 
+        outf.write("\n") 
     for cur_subject in subject_blob_vals: 
         for cur_aggregation_interval in subject_blob_vals[cur_subject]: 
             cur_weekday=cur_aggregation_interval.weekday()
@@ -39,6 +44,8 @@ def aggregate_healthkit_data_collector(subject_blob_vals,outf_prefix):
                     maxval=subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Max']
                     sumvals=subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Sum']
                     nvals=subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['N']
+                    if get_median is True: 
+                        median_val=statistics.median(subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['median'])
                     if nvals==0: 
                         nvals+=0.001  #add pseudocount to avoid division by 0 
                     meanvals=round(sumvals/nvals,2)
@@ -53,9 +60,12 @@ def aggregate_healthkit_data_collector(subject_blob_vals,outf_prefix):
                                str(maxval)+'\t'+
                                str(meanvals)+'\t'+
                                ','.join([str(i) for i in source_tuple])+'\t'+
-                               str(blobs)+'\n')
+                               str(blobs))
+                    if get_median is True: 
+                        outf.write(str(median_val))
+                    outf.write('\n')
     outf.close()
-def aggregate_healthkit_workout_collector(subject_blob_vals,outf_prefix):
+def aggregate_healthkit_workout_collector(subject_blob_vals,outf_prefix,get_median=False):
     outf=open(outf_prefix,'w')
     outf.write("Subject\tDate\tWeekDay\tMetric\tN\tDistance\tEnergy\tSource\tSourceBlobs\n")
     for cur_subject in subject_blob_vals: 

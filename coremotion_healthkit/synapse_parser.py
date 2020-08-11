@@ -11,7 +11,7 @@ from config import *
 from qc import * 
 
 
-def parse_motion_activity(file_path,subject_blob_vals,subject_timestamp_blobs,cur_subject,aggregation_interval,healthkit_fields_to_use):
+def parse_motion_activity(file_path,subject_blob_vals,subject_timestamp_blobs,cur_subject,aggregation_interval,healthkit_fields_to_use,get_median=False):
     parseAs=None
     cur_blob,data,parse_as=open_motion_activity_synapse(file_path) 
     if data is None: 
@@ -62,7 +62,10 @@ def parse_motion_activity(file_path,subject_blob_vals,subject_timestamp_blobs,cu
                     cur_tz=cur_time.tzinfo 
                 except: 
                     cur_tz=pytz.UTC
-            cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
+            try:
+                cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
+            except: 
+                continue
             if cur_aggregation_interval.tzinfo is None: 
                 cur_aggregation_interval=pytz.utc.localize(cur_aggregation_interval)
             new_activity=data[activity_type_field].iloc[row]
@@ -105,7 +108,7 @@ def parse_motion_activity(file_path,subject_blob_vals,subject_timestamp_blobs,cu
     return subject_blob_vals,subject_timestamp_blobs
 
 
-def parse_healthkit_sleep(file_path, subject_blob_vals, subject_timestamp_blobs,cur_subject,aggregation_interval,healthkit_fields_to_use):
+def parse_healthkit_sleep(file_path, subject_blob_vals, subject_timestamp_blobs,cur_subject,aggregation_interval,healthkit_fields_to_use,get_median=False):
     cur_blob, data=open_healthkit_sleep(file_path)
     if data is None: 
         return subject_blob_vals,subject_timestamp_blobs        
@@ -131,7 +134,10 @@ def parse_healthkit_sleep(file_path, subject_blob_vals, subject_timestamp_blobs,
                         cur_tz=cur_time.tzinfo 
                     except: 
                         cur_tz=pytz.UTC
-                cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
+                try:
+                    cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
+                except:
+                    continue
                 if cur_aggregation_interval.tzinfo is None: 
                     cur_aggregation_interval=pytz.utc.localize(cur_aggregation_interval)
 
@@ -152,21 +158,26 @@ def parse_healthkit_sleep(file_path, subject_blob_vals, subject_timestamp_blobs,
 
                 if source_tuple not in subject_blob_vals[cur_subject][cur_aggregation_interval][datatype]: 
                     subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]={'Min':value,'Max':value,'N':1,'Sum':value,'Blobs':set([cur_blob])} 
+                    if get_median is True: 
+                        subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Median']=[value]
                 else: 
                     subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['N']+=1
                     subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Sum']+=value
                     subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Blobs'].add(cur_blob)
-                    
+    
                     if value < subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Min']:
                         subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Min']=value
                     if value > subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Max']:
                         subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Max']=value
+                    if get_median is True: 
+                        subject_blob_vals[cur_subject][cur_aggregation_interval][datatype][source_tuple]['Median'].append(value)
+
     except Exception as e:
         raise
         print("There was a problem parsing:"+str(file_path))
     return subject_blob_vals, subject_timestamp_blobs 
 
-def parse_healthkit_workout(file_path,subject_blob_vals,subject_timestamp_blobs,cur_subject,aggregation_interval,healthkit_fields_to_use): 
+def parse_healthkit_workout(file_path,subject_blob_vals,subject_timestamp_blobs,cur_subject,aggregation_interval,healthkit_fields_to_use,get_median=False): 
     cur_blob,data=open_healthkit_workout(file_path) 
     if data is None: 
         return subject_blob_vals, subject_timestamp_blobs 
@@ -205,7 +216,10 @@ def parse_healthkit_workout(file_path,subject_blob_vals,subject_timestamp_blobs,
                     cur_tz=cur_time.tzinfo
                 except: 
                     cur_tz=pytz.UTC
-            cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
+            try:
+                cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
+            except: 
+                continue
             if cur_aggregation_interval.tzinfo is None: 
                 cur_aggregation_interval=pytz.utc.localize(cur_aggregation_interval)
 
@@ -224,7 +238,7 @@ def parse_healthkit_workout(file_path,subject_blob_vals,subject_timestamp_blobs,
         print("There was a problem parsing:"+str(file_path))
     return subject_blob_vals,subject_timestamp_blobs 
 
-def parse_healthkit_data(file_path,subject_blob_vals,subject_timestamp_blobs,cur_subject,aggregation_interval,healthkit_fields_to_use):
+def parse_healthkit_data(file_path,subject_blob_vals,subject_timestamp_blobs,cur_subject,aggregation_interval,healthkit_fields_to_use,get_median=False):
     cur_blob,data=open_healthkit_data(file_path) 
     if data is None: 
         return subject_blob_vals,subject_timestamp_blobs 
@@ -268,7 +282,10 @@ def parse_healthkit_data(file_path,subject_blob_vals,subject_timestamp_blobs,cur
                     cur_tz=cur_time.tzinfo
                 except: 
                     cur_tz=pytz.UTC
-            cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
+            try:
+                cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
+            except: 
+                continue
             if cur_aggregation_interval.tzinfo is None: 
                 cur_aggregation_interval=pytz.utc.localize(cur_aggregation_interval)
 
