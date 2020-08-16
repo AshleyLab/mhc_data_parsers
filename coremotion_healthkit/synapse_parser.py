@@ -219,7 +219,8 @@ def parse_healthkit_data(file_path,subject_blob_vals,subject_timestamp_blobs,cur
         for index,row in data.iterrows():
             datatype=row['type']
             source=row['source']
-            source_tuple=tuple([source])
+            sourceIdentifier=row['sourceIdentifier']
+            source_tuple=tuple([source,sourceIdentifier])
             value=row['value']
             
             #check for feasible values 
@@ -280,13 +281,13 @@ if __name__=="__main__":
     #TEST THIS:
 
     #totest="/oak/stanford/groups/euan/projects/mhc/data/synapseCache/462/53682462/aX5zucSVNrnoPhxVJ-Pli3_7-data.csv"
-    #totest="/oak/stanford/groups/euan/projects/mhc/data/synapseCache/283/54263283/ckTBHR5A0PNmOj2qKZn1QqQP-data.csv" #data with stepcount
+    totest="/oak/stanford/groups/euan/projects/mhc/data/synapseCache/283/54263283/ckTBHR5A0PNmOj2qKZn1QqQP-data.csv" #data with stepcount
     #totest="/oak/stanford/groups/euan/projects/mhc/data/synapseCache/484/52726484/MGYsiBzDt3rp1gvn4UxFaubL-data.csv" #coremotion from phone 
-    totest="/oak/stanford/groups/euan/projects/mhc/data/synapseCache/415/53280415/QEqIDu77MmNXmvN0op3b5_iy-data.csv" #workout 
+    #totest="/oak/stanford/groups/euan/projects/mhc/data/synapseCache/415/53280415/QEqIDu77MmNXmvN0op3b5_iy-data.csv" #workout 
     healthCode="2c7b48bb-fd41-447e-b189-984dd43f4048"
-    #health_kit_data,subject_timestamp_blobs=parse_healthkit_data(totest,{healthCode:{}},{healthCode:{}},healthCode,10,["HKQuantityTypeIdentifierStepCount"])
+    health_kit_data,subject_timestamp_blobs=parse_healthkit_data(totest,{healthCode:{}},{healthCode:{}},healthCode,'10min',["HKQuantityTypeIdentifierStepCount"])
     #motion_data,motion_timestamp_blobs=parse_motion_activity(totest,{healthCode:{}},{healthCode:{}},healthCode,10,None)
-    workout_data,workout_timestamp_blobs=parse_healthkit_workout(totest,{healthCode:{}},{healthCode:{}},healthCode,'1D','all')
+    #workout_data,workout_timestamp_blobs=parse_healthkit_workout(totest,{healthCode:{}},{healthCode:{}},healthCode,'1D','all')
     pdb.set_trace() 
 
 
