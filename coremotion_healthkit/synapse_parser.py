@@ -54,6 +54,8 @@ def parse_motion_activity(file_path,subject_blob_vals,subject_timestamp_blobs,cu
     #parse through all remaining rows
     for row in range(first_row+1,num_rows):
         try:
+            if type(cur_time)!=pd.Timestamp: 
+                cur_time=pd.Timestamp(cur_time) 
             cur_aggregation_interval=cur_time.floor(freq=aggregation_interval)
             if cur_aggregation_interval.tzinfo is None: 
                 cur_aggregation_interval=pytz.utc.localize(cur_aggregation_interval)
@@ -118,6 +120,8 @@ def parse_healthkit_sleep(file_path, subject_blob_vals, subject_timestamp_blobs,
                         cur_time=parse(cur_time) 
                     except: 
                         continue
+                if (type(cur_time)!=pd.Timestamp): 
+                    cur_time=pd.Timestamp(cur_time)
                 cur_aggregation_interval=cur_time.floor(freq=aggregation_interval)
                 if cur_aggregation_interval.tzinfo is None: 
                     cur_aggregation_interval=pytz.utc.localize(cur_aggregation_interval)
@@ -190,6 +194,8 @@ def parse_healthkit_workout(file_path,subject_blob_vals,subject_timestamp_blobs,
             source_tuple=tuple([source,sourceIdentifier])
             energy=row['energy consumed']
             distance=row['total distance'] 
+            if (type(cur_time)!=pd.Timestamp): 
+                cur_time=pd.Timestamp(cur_time)
             cur_aggregation_interval=cur_time.floor(freq=aggregation_interval)
             if cur_aggregation_interval.tzinfo is None: 
                 cur_aggregation_interval=pytz.utc.localize(cur_aggregation_interval)
@@ -246,6 +252,8 @@ def parse_healthkit_data(file_path,subject_blob_vals,subject_timestamp_blobs,cur
                     cur_time=parse(cur_time)
                 except: 
                     continue
+            if (type(cur_time)!=pd.Timestamp): 
+                cur_time=pd.Timestamp(cur_time)
             cur_aggregation_interval=cur_time.floor(freq=aggregation_interval)
             if cur_aggregation_interval.tzinfo is None: 
                 cur_aggregation_interval=pytz.utc.localize(cur_aggregation_interval)

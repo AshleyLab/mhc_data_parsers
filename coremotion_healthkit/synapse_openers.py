@@ -72,7 +72,7 @@ def open_healthkit_workout(file_path):
                          error_bad_lines=False,
                          index_col=False,
                          quotechar='"',
-                         usecols=[0,1,2,3,4,5,6,7,8,9],
+                         usecols=[0,1,2,3,4,5,6,7,8,9,10],
                          engine='python')
         first_col='startTime'
         if(data.iloc[0][first_col]==first_col):
@@ -90,7 +90,7 @@ def open_healthkit_workout(file_path):
                  error_bad_lines=False,
                  index_col=False,
                  quotechar='|',
-                 usecols=[0,1,2,3,4,5,6,7,8,9],
+                 usecols=[0,1,2,3,4,5,6,7,8,9,10],
                  engine='python')
             first_col='startTime'
             if(data.iloc[0][first_col]==first_col):
