@@ -19,7 +19,7 @@ def parse_args():
     parser.add_argument("-data_types",nargs="+",help="allowed values are \"motion_tracker\",\"health_kit_data_collector\", \"health_kit_sleep_collector\", \"health_kit_workout_collector\" ")
     parser.add_argument("--health_kit_fields_to_use",nargs="+",default="all")
     parser.add_argument("--subjects",default="all")
-    parser.add_argument("--aggregation_interval", type=int, default=1440, help="number of minutes to use as aggregation interval")
+    parser.add_argument("--aggregation_interval", help="this is a string that can be passed to the freq argument of pandas.timestamp.floor; i.e. '1D', 'min', '7D', '10min'")
     parser.add_argument("--pickle_dict",default=False) 
     parser.add_argument("--get_median",action="store_true",default=False) 
     return parser.parse_args()

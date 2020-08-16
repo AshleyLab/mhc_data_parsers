@@ -32,7 +32,7 @@ def parse_motion_activity(file_path,subject_blob_vals,subject_timestamp_blobs,cu
 
         cur_activity=data[activity_type_field].iloc[first_row]
         cur_confidence=data[confidence_field].iloc[first_row] 
-        while (cur_activity=="not available") and (first_row <(num_rows-1)) and (cur_confidence>0) :
+        while ((cur_activity=="not available") or (cur_confidence < confidence_thresh)) and (first_row <(num_rows-1)):
             first_row+=1
             try:
                 cur_time=data[start_time_field].iloc[first_row]
@@ -42,38 +42,25 @@ def parse_motion_activity(file_path,subject_blob_vals,subject_timestamp_blobs,cu
                     except:
                         continue
                 row_string=','.join([str(i) for i in data.iloc[first_row]])
-                if row_string in subject_timestamp_blobs[subject]: 
-                    subject_timestamp_blobs[subject][row_string].append(cur_blob) 
-                    continue 
-
+                if row_string in subject_timestamp_blobs[cur_subject]: 
+                    subject_timestamp_blobs[cur_subject][row_string].append(cur_blob) 
+                    continue
                 cur_activity=data[activity_type_field].iloc[first_row]
                 cur_confidence=data[confidence_field].iloc[first_row] 
             except: 
                 continue 
     except Exception as e:
         return subject_blob_vals,subject_timestamp_blobs
-    #parse through all remaining rows 
+    #parse through all remaining rows
     for row in range(first_row+1,num_rows):
         try:
-            try:
-                cur_tz=cur_time.tz
-            except: 
-                try:
-                    cur_tz=cur_time.tzinfo 
-                except: 
-                    cur_tz=pytz.UTC
-            try:
-                cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
-            except: 
-                continue
+            cur_aggregation_interval=cur_time.floor(freq=aggregation_interval)
             if cur_aggregation_interval.tzinfo is None: 
                 cur_aggregation_interval=pytz.utc.localize(cur_aggregation_interval)
             new_activity=data[activity_type_field].iloc[row]
             new_time=data[start_time_field].iloc[row]
             if type(new_time)==str: 
-                new_time=parse(new_time) 
-            
-
+                new_time=parse(new_time)
             #check for a duplicate blob entry
             row_string=','.join([str(i) for i in data.iloc[row]])
             if row_string in subject_timestamp_blobs[cur_subject]: 
@@ -131,17 +118,7 @@ def parse_healthkit_sleep(file_path, subject_blob_vals, subject_timestamp_blobs,
                         cur_time=parse(cur_time) 
                     except: 
                         continue
-                try:
-                    cur_tz=cur_time.tz 
-                except: 
-                    try:
-                        cur_tz=cur_time.tzinfo 
-                    except: 
-                        cur_tz=pytz.UTC
-                try:
-                    cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
-                except:
-                    continue
+                cur_aggregation_interval=cur_time.floor(freq=aggregation_interval)
                 if cur_aggregation_interval.tzinfo is None: 
                     cur_aggregation_interval=pytz.utc.localize(cur_aggregation_interval)
 
@@ -213,20 +190,9 @@ def parse_healthkit_workout(file_path,subject_blob_vals,subject_timestamp_blobs,
             source_tuple=tuple([source,sourceIdentifier])
             energy=row['energy consumed']
             distance=row['total distance'] 
-            try:
-                cur_tz=cur_time.tz
-            except: 
-                try:
-                    cur_tz=cur_time.tzinfo
-                except: 
-                    cur_tz=pytz.UTC
-            try:
-                cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
-            except: 
-                continue
+            cur_aggregation_interval=cur_time.floor(freq=aggregation_interval)
             if cur_aggregation_interval.tzinfo is None: 
                 cur_aggregation_interval=pytz.utc.localize(cur_aggregation_interval)
-
             if cur_aggregation_interval not in subject_blob_vals[cur_subject]: 
                 subject_blob_vals[cur_subject][cur_aggregation_interval]={}
             if datatype not in subject_blob_vals[cur_subject][cur_aggregation_interval]: 
@@ -279,17 +245,7 @@ def parse_healthkit_data(file_path,subject_blob_vals,subject_timestamp_blobs,cur
                     cur_time=parse(cur_time)
                 except: 
                     continue
-            try:
-                cur_tz=cur_time.tz
-            except: 
-                try:
-                    cur_tz=cur_time.tzinfo
-                except: 
-                    cur_tz=pytz.UTC
-            try:
-                cur_aggregation_interval=datetime.fromtimestamp((cur_time.timestamp()//(aggregation_interval*60))*(aggregation_interval*60),tz=cur_tz)
-            except: 
-                continue
+            cur_aggregation_interval=cur_time.floor(freq=aggregation_interval)
             if cur_aggregation_interval.tzinfo is None: 
                 cur_aggregation_interval=pytz.utc.localize(cur_aggregation_interval)
 
@@ -324,11 +280,13 @@ if __name__=="__main__":
     #TEST THIS:
 
     #totest="/oak/stanford/groups/euan/projects/mhc/data/synapseCache/462/53682462/aX5zucSVNrnoPhxVJ-Pli3_7-data.csv"
-    totest="/oak/stanford/groups/euan/projects/mhc/data/synapseCache/283/54263283/ckTBHR5A0PNmOj2qKZn1QqQP-data.csv" 
-    base_dir="/oak/stanford/groups/euan/projects/mhc/data/synapseCache/"
+    #totest="/oak/stanford/groups/euan/projects/mhc/data/synapseCache/283/54263283/ckTBHR5A0PNmOj2qKZn1QqQP-data.csv" #data with stepcount
+    #totest="/oak/stanford/groups/euan/projects/mhc/data/synapseCache/484/52726484/MGYsiBzDt3rp1gvn4UxFaubL-data.csv" #coremotion from phone 
+    totest="/oak/stanford/groups/euan/projects/mhc/data/synapseCache/415/53280415/QEqIDu77MmNXmvN0op3b5_iy-data.csv" #workout 
     healthCode="2c7b48bb-fd41-447e-b189-984dd43f4048"
-    health_kit_data,subject_timestamp_blobs=parse_healthkit_data(totest,{healthCode:{}},{healthCode:{}},healthCode,10,["HKQuantityTypeIdentifierStepCount"])
+    #health_kit_data,subject_timestamp_blobs=parse_healthkit_data(totest,{healthCode:{}},{healthCode:{}},healthCode,10,["HKQuantityTypeIdentifierStepCount"])
+    #motion_data,motion_timestamp_blobs=parse_motion_activity(totest,{healthCode:{}},{healthCode:{}},healthCode,10,None)
+    workout_data,workout_timestamp_blobs=parse_healthkit_workout(totest,{healthCode:{}},{healthCode:{}},healthCode,'1D','all')
     pdb.set_trace() 
 
 
-    
